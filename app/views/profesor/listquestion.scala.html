@@ -1,0 +1,37 @@
+@(model:String)(theme:Theme)(course:Course)
+<div>
+@if(model.equals("course")){
+    @for(question<-course.questions()){
+        <div class="qBorder">
+            <div class="qCursor">
+            @if(question.image!=null){
+                <img src="@{question.getImagePath()}" data-id="@{question.id}" data-image="@{question.image}">
+            }
+            </div>
+        </div>
+    }
+}
+@if(model.equals("theme")){
+    @for(question<-theme.questions){
+        <div class="qBorder">
+            <div class="qCursor">
+            @if(question.image!=null){
+                <img src="@{question.getImagePath()}" data-id="@{question.id}" data-image="@{question.image}">
+            }
+            </div>
+        </div>
+    }
+}
+@if(model.equals("other")){
+    @for(question<-Question.find.all()){
+        <div class="qBorder">
+            <div class="qCursor">
+            @if(question.image!=null){
+                <img src="@{question.getImagePath()}" data-id="@{question.id}" data-image="@{question.image}">
+            }
+            </div>
+        </div>
+    }
+}
+</div>
+

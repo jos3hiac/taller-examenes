@@ -1,0 +1,16 @@
+@(model:String)(course:Course)(exam:Exam)(cycle: Cycle)(professor:Professor)
+@if(model.equals("cycle")){
+    @for(exam<-cycle.exams){
+        <a class="list-group-item" data-id="@{exam.id}">@Application.getDate(exam.date,"dd / MM / yy")</a>
+    }
+}
+@if(model.equals("exam")){
+    @for(course<-professor.courses(cycle.id)){
+        <a class="list-group-item" data-id="@{course.id}">@course.name</a>
+    }
+}
+@if(model.equals("course")){
+    @for(theme <- course.themes(exam.id, cycle.id)) {
+        <a class="list-group-item" data-id="@{theme.id}">@theme.name</a>
+    }
+}
