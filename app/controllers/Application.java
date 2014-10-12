@@ -67,21 +67,24 @@ public class Application extends Controller {
     public static Result validateListExist(){
         DynamicForm data = form().bindFromRequest();
         String values=data.get("values");
-        String lista="";
+        String lista="",message=data.get("message"),error="";
         for(String value:values.split(data.get("delimiter"))){
             if(exist(data.get("model"),data.get("column"),value,data.get("condition")))lista+=","+value;
         }
-        if(!lista.equals(""))lista=lista.substring(1);
-        return ok(lista);
+        if(!lista.equals("")){
+            lista=lista.substring(1);
+            error=message.split("\\?")[0]+lista+message.split("\\?")[1];
+        }
+        return ok(error);
     }
     public static Result validateExist(){
         DynamicForm data = form().bindFromRequest();
-        String error="";
+        String error="",message=data.get("message");
         if(exist(data.get("model"),data.get("column"),data.get("value"),data.get("condition")))
-            error=errorExist(data.get("model"),data.get("column"),data.get("value"),data.get("condition"));
+            error=message.split("\\?")[0]+data.get("value")+message.split("\\?")[1];
         return ok(error);
     }
-    private static String errorExist(String model,String column,String value,String conditions){
+    /*private static String errorExist(String model,String column,String value,String conditions){
         String error="";
         switch(model){
             case "Course":
@@ -99,7 +102,7 @@ public class Application extends Controller {
                 }break;
         }
         return error;
-    }
+    }*/
     private static boolean exist(String model,String column,String value,String conditions){
         boolean exist=false;
         switch(model) {

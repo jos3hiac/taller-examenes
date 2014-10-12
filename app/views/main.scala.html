@@ -40,18 +40,34 @@
         $.validator.addMethod(
             "exist",
             function(value,element,params) {
-                var error="",data={model:params[0].split(".")[0],column:params[0].split(".")[1],value:value};
-                if(params.length==2)data["condition"]=params[1]
+                var error="";params["value"]=value
                 $.ajax({
                     type: "POST",
                     async: false,
                     url: "validateexist",
-                    data: data,
+                    data: params,
                     success: function(msg){
                         error=msg
                     }
                 })
                 if(error!="")$.validator.messages.exist=error
+                return error=="";
+            }
+        )
+        $.validator.addMethod(
+            "listexist",
+            function(value,element,params) {
+                var error="";params["values"]=value
+                $.ajax({
+                    type: "POST",
+                    async: false,
+                    url: "validatelistexist",
+                    data: params,
+                    success: function(msg){
+                        error=msg
+                    }
+                })
+                if(error!="")$.validator.messages.listexist=error
                 return error=="";
             }
         );
