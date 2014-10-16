@@ -13,14 +13,23 @@ import static play.data.Form.form;
 public class Administrador extends Controller {
     public static Result index() {
         if(NoAuth()!=null)return NoAuth();
-        Admin admin= User.findByEmail(session("email")).admin;
-        return ok(index.render(admin));
+        return ok(index.render(Application.user().admin));
+    }
+    public static Result findCourse(){
+        DynamicForm data = form().bindFromRequest();
+        int id=Integer.parseInt(data.get("id"));
+        return ok(Json.toJson(Course.find.byId(id).getMap()));
+    }
+    public static Result findTheme(){
+        DynamicForm data = form().bindFromRequest();
+        int id=Integer.parseInt(data.get("id"));
+        return ok(Json.toJson(Theme.find.byId(id).getMap()));
     }
     public static Result listTheme(){
         DynamicForm data = form().bindFromRequest();
-        int courseid=Integer.parseInt(data.get("courseid"));
+        int course_id=Integer.parseInt(data.get("course_id"));
         List<Map<String, String>> themes=new ArrayList<>();
-        for(Theme theme:Course.find.byId(courseid).themes){
+        for(Theme theme:Course.find.byId(course_id).themes){
             Map<String,String> map=new HashMap<>();
             map.put("id",""+theme.id);
             map.put("name",theme.name);
@@ -28,36 +37,48 @@ public class Administrador extends Controller {
         }
         return ok(Json.toJson(themes));
     }
-    public static Result validateCourses(){
+    public static Result addCourses(){
         DynamicForm data = form().bindFromRequest();
-        String delimiter=data.get("delimiter");
-        String error="",msg="";
-        String names[]=data.get("names").split(delimiter);
-        for(String name:names){
-            if(Course.find.where().eq("name",name).findList().size()>0){
-                msg+=","+name;
-            }
+        List<Map<String, String>> courses=new ArrayList<>();
+        for (String name : data.get("names").split(data.get("delimiter"))) {
+            Course course = Course.create(name);
+            courses.add(course.getMap());
         }
-        if(!msg.equals("")){
-            error="Los cursos: "+msg.substring(1)+" ya existen";
-        }
-        return ok(error);
+        return ok(Json.toJson(courses));
     }
-    public static Result validateThemes(){
+    public static Result addThemes(){
         DynamicForm data = form().bindFromRequest();
-        String delimiter=data.get("delimiter");
-        String error="",msg="";
-        String names[]=data.get("names").split(delimiter);
         int course_id=Integer.parseInt(data.get("course_id"));
-        for(String name:names){
-            if(Theme.find.where().eq("name",name).eq("course_id",course_id).findList().size()>0){
-                msg+=","+name;
-            }
+        List<Map<String, String>> themes=new ArrayList<>();
+        for(String name:data.get("names").split(data.get("delimiter"))){
+            Theme theme=Theme.create(name,course_id);
+            themes.add(theme.getMap());
         }
-        if(!msg.equals("")){
-            error="Los temas: "+msg.substring(1)+" del curso "+Course.find.byId(course_id).name+" ya existen";
-        }
-        return ok(error);
+        return ok(Json.toJson(themes));
+    }
+    public static Result updateCourse(){
+        DynamicForm data = form().bindFromRequest();
+        int id=Integer.parseInt(data.get("id"));
+        Course.find.byId(id).updateName(data.get("name"));
+        return ok();
+    }
+    public static Result updateTheme(){
+        DynamicForm data = form().bindFromRequest();
+        int id=Integer.parseInt(data.get("id"));
+        Theme.find.byId(id).updateName(data.get("name"));
+        return ok();
+    }
+    public static Result deleteCourse(){
+        DynamicForm data = form().bindFromRequest();
+        int id=Integer.parseInt(data.get("id"));
+        Course.find.byId(id).delete();
+        return ok();
+    }
+    public static Result deleteTheme(){
+        DynamicForm data = form().bindFromRequest();
+        int id=Integer.parseInt(data.get("id"));
+        Theme.find.byId(id).delete();
+        return ok();
     }
     private static Result NoAuth(){
         if(session("email")==null)

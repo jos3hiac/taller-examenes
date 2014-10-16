@@ -84,25 +84,6 @@ public class Application extends Controller {
             error=message.split("\\?")[0]+data.get("value")+message.split("\\?")[1];
         return ok(error);
     }
-    /*private static String errorExist(String model,String column,String value,String conditions){
-        String error="";
-        switch(model){
-            case "Course":
-                switch(column){
-                    case "name":error="El curso "+value+" ya existe";break;
-                }break;
-            case "Theme":
-                switch(column){
-                    case "name":int course_id=Integer.parseInt(getMap(conditions).get("course_id"));
-                        error="El tema "+value+" del curso "+Course.find.byId(course_id).name+" ya existe";break;
-                }break;
-            case "User":
-                switch(column){
-                    case "email":error="El email "+value+" ya existe";break;
-                }break;
-        }
-        return error;
-    }*/
     private static boolean exist(String model,String column,String value,String conditions){
         boolean exist=false;
         switch(model) {

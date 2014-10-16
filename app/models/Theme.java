@@ -27,5 +27,16 @@ public class Theme extends Model{
         theme.save();
         return theme;
     }
+    public Map getMap(){
+        Map<String,String> map=new HashMap<>();
+        map.put("id",id+"");
+        map.put("name",name);
+        map.put("course_id",course.id+"");
+        return map;
+    }
+    public void updateName(String name){
+        this.name=name;
+        update();
+    }
     public static Finder<Integer,Theme> find = new Finder<>(Integer.class,Theme.class);
 }

@@ -1,5 +1,5 @@
 @(professor: Professor)(content: Html)
-@main("Profesor") {
+@main("Profesor"){
     <div id="header" class="nb nb-blue navbar-fixed-top">
         <div class="nbs nbs-text">
             <div class="col-md-3">
@@ -16,33 +16,7 @@
     <div class="row">
     <div class="col-md-4" id="tree">
         <style>
-            a:hover{
-                cursor: pointer;
-            }
-            div.list-group{
-                width: 250px;margin: 5px;
-            }
-            .nb{
-                position: relative;
-                min-height: 45px;
-                margin-bottom: 10px;
-                border: 1px solid transparent;
-            }
-            .nb-blue{
-                background-color: #2a6496/*#3b5998*/;border-bottom: 1px solid #133783;
-            }
-            .nbs{
-                width:1200px;margin: 0 auto;padding: 5px;
-            }
-            .nbs-text{
-                background-color: transparent;color: #fff;font-weight: bold;
-            }
-            .nbs-a{
-                color: #fff;font-size: 110%;padding: 6px 12px;display: inline-block;
-            }
-            .nbs-a:hover{
-                color: #fff;background-color:#1D578A;text-decoration: none;border-radius: 2px;
-            }
+
         </style>
         <div class="list-group" data-ord="1">
         @for(cycle<-professor.cycles()){

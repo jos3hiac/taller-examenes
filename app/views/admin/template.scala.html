@@ -1,0 +1,20 @@
+@(admin: Admin)(content: Html)
+@main("Administrador"){
+    <div id="header" class="nb nb-blue navbar-fixed-top">
+        <div class="nbs nbs-text">
+            <div class="col-md-3">
+                    @admin.name <a href="/logout" class="btn btn-primary">Cerrar Sesion</a>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+    <div class="col-md-4" id="tree">
+        <style>
+
+        </style>
+    </div>
+    <div class="col-md-8">
+        @content
+    </div>
+    </div>
+}

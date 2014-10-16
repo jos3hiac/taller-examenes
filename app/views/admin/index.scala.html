@@ -1,10 +1,8 @@
 @(admin: Admin)
-@main("Administrador") {
-    <div>
-        Bienvenido <b>@admin.name</b><a href="/logout" class="btn btn-primary">Cerrar Sesion</a>
-    </div>
-    <div id="div_cursos" class="col-md-6 col-md-offset-2">
-        <div class="col-md-5">
+@import views.html.admin.template
+@template(admin){
+    <div id="div_cursos" class="col-md-10">
+        <div class="col-md-6">
             <h3 style="display: inline-block">Cursos</h3>
             <div id="add_curso">
                 <form class="form-horizontal">
@@ -17,17 +15,23 @@
                 <thead>
                     <tr style="cursor: pointer">
                         <th>Nombre</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                 @for(course <- Course.find.all()) {
                     <tr data-id="@{course.id}">
                         <td>@course.name</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">Editar</button>
+                            <button class="btn btn-sm btn-primary hidden">Guardar</button>
+                            <button class="btn btn-sm btn-primary hidden">Cancelar</button>
+                            <button class="btn btn-sm btn-danger">Eliminar</button>
+                        </td>
                     </tr>
                 }
                 </tbody>
             </table>
-            <button id="cursos_guardar" class="btn btn-sm btn-primary pull-right">Guardar</button>
             <div id="addl_curso" style="display: none">
                 <form class="form-horizontal">
                     <h3 class="text-center">Nuevos Cursos</h3>
@@ -39,7 +43,7 @@
                 </form>
             </div>
         </div>
-        <div class="col-md-5 hidden">
+        <div class="col-md-6 hidden">
             <h3 style="display: inline-block">Temas</h3>
             <div id="add_theme">
                 <form class="form-horizontal">
@@ -52,12 +56,12 @@
                 <thead>
                     <tr style="cursor: pointer">
                         <th>Nombre</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                 </tbody>
             </table>
-            <button id="themes_guardar" class="btn btn-sm btn-primary pull-right">Guardar</button>
             <div id="addl_theme" style="display: none">
                 <form class="form-horizontal">
                     <h3 class="text-center">Nuevos Temas</h3>
@@ -71,21 +75,10 @@
         </div>
     </div>
     <script>
-        function editable(elem){
-            $(elem).on('focus',function(){
-                $(this).attr("data-text",$(this).text())
-            })
-            $(elem).dblclick(function(){
-                $(this).attr("contenteditable",true)
-            })
-            $(elem).on('blur',function(){
-                //if($(this).attr("data-text")!==$(this).text()){
-                //    $(this).attr("data-text",$(this).text())
-                //}
-                $(this).removeAttr("contenteditable")
-            })
+        function editable(elem,edit){
+            if(edit)$(elem).attr("contenteditable",edit)
+            else $(elem).removeAttr("contenteditable")
         }
-        editable($("#cursos_tab tbody td"))
         var datatable_cursos,datatable_themes;
         function start_datatable_cursos(){
             datatable_cursos=$("#cursos_tab").dataTable({
@@ -99,10 +92,16 @@
                 }
             })
         }
-        function add_names_cursos(names){
+        function add_tr_curso(id,name){
+            return '<tr data-id="'+id+'"><td>'+name+'</td><td><button class="btn btn-sm btn-primary">Editar</button>'+
+                '<button class="btn btn-sm btn-primary hidden">Guardar</button>'+
+                '<button class="btn btn-sm btn-primary hidden">Cancelar</button>'+
+                '<button class="btn btn-sm btn-danger">Eliminar</button></td></tr>'
+        }
+        function add_cursos(courses){
             datatable_cursos.fnDestroy()
-            for(var i in names){
-                $("#cursos_tab tbody").append('<tr><td>'+names[i]+'</td></tr>')
+            for(var i in courses){
+                $("#cursos_tab tbody").append(add_tr_curso(courses[i].id,courses[i].name))
                 editable($("#cursos_tab tbody tr:last-child td"))
             }
             start_datatable_cursos()
@@ -111,53 +110,103 @@
             datatable_themes=$("#themes_tab").dataTable({bFilter: false,bInfo: false,"sScrollY" : "200","paging":false,
                 "language": {"infoEmpty": "No se encontraron temas"}})
         }
-        function add_names_themes(names){
+        function add_tr_theme(id,name){
+            return '<tr data-id="'+id+'"><td>'+name+'</td><td><button class="btn btn-sm btn-primary">Editar</button>'+
+                '<button class="btn btn-sm btn-primary hidden">Guardar</button>'+
+                '<button class="btn btn-sm btn-primary hidden">Cancelar</button>'+
+                '<button class="btn btn-sm btn-danger">Eliminar</button></td></tr>'
+        }
+        function add_themes(themes){
             datatable_themes.fnDestroy()
-            for(var i in names){
-                $("#themes_tab tbody").append('<tr><td>'+names[i]+'</td></tr>')
+            for(var i in themes){
+                $("#themes_tab tbody").append(add_tr_theme(themes[i].id,themes[i].name))
                 editable($("#themes_tab tbody tr:last-child td"))
             }
             start_datatable_themes()
         }
         start_datatable_cursos()
-        $("#cursos_tab tbody").on( 'click', 'tr', function () {
-            if ( $(this).hasClass('selected') ) $(this).removeClass('selected')
+        $("#cursos_tab tbody").on( 'click', 'tr', function (e) {
+            if ( $ ( this ).hasClass ( 'selected' ) ) $ ( this ).removeClass ( 'selected' )
             else {
-                $("#cursos_tab tr.selected").removeClass('selected');
-                $(this).addClass('selected');
+            $ ( "#cursos_tab tr.selected" ).removeClass ( 'selected' ) ;
+            $ ( this ).addClass ( 'selected' ) ;
             }
-            if($(this)[0].hasAttribute("data-id")){
+            $.ajax ( {
+                type : "POST",
+                url : "administrador/listtheme",
+                async : false,
+                data : { course_id : $ ( this ).attr ( "data-id" ) },
+                success : function ( themes ) {
+                if ( typeof datatable_themes !== "undefined" ) datatable_themes.fnDestroy ( )
+                    $ ( "#themes_tab" ).parent ( ).removeClass ( "hidden" )
+                    $ ( "#themes_tab tbody" ).text ( "" )
+                    for ( var i in themes ) {
+                        $ ( "#themes_tab tbody" ).append ( add_tr_theme ( themes[ i ].id, themes[ i ].name ) )
+                    }
+                    start_datatable_themes ( )
+                }
+            } )
+            cleanForm ( $ ( "#add_theme form" ) )
+            $ ( "#add_theme form" ).validate ( {
+                rules : {
+                    name : { required : true, exist : { model : "Theme", column : "name", condition : "course_id:" + $ ( "#cursos_tab tr.selected" ).attr ( "data-id" ),
+                    message : "El tema ? del curso " + $ ( "#cursos_tab tr.selected td:nth-child(1)").text() + " ya existe" } }
+                },
+                errorPlacement : function ( error, element ) {
+                    $ ( error ).addClass ( 'alert alert-danger' )
+                    $ ( element ).parent ( ).append ( error )
+                }
+            } )
+        })
+        $("#cursos_tab tbody").on( 'click', 'button', function (e) {
+            var tr=$(this).parent().parent()
+            var hidden=$(this).parent().find(".hidden")
+            var visible=$(this).parent().find(":not('.hidden')")
+            e.stopPropagation()
+            if($(this).text()=='Editar'){
+                editable(tr,true)
+                $(hidden).removeClass("hidden")
+                $(visible).addClass("hidden")
+            }
+            if($(this).text()=='Guardar'){
                 $.ajax ( {
                     type : "POST",
-                    url : "administrador/listtheme",
-                    async: false,
-                    data : {courseid:$(this ).attr("data-id")},
-                    success : function (themes) {
-                        if(typeof datatable_themes !== "undefined")datatable_themes.fnDestroy()
-                        $("#themes_tab").parent( ).removeClass("hidden")
-                        $("#themes_tab tbody").text("")
-                        for(var i in themes){
-                            $("#themes_tab tbody").append('<tr data-id="'+themes[i].id+'"><td>'+themes[i].name+'</td></tr>')
-                            editable($("#themes_tab tbody tr:last-child td"))
-                        }
-                        start_datatable_themes()
-                    }
-                })
-                cleanForm($("#add_theme form"))
-                $("#add_theme form").validate({
-                    rules:{
-                        name:{required:true,exist:{model:"Theme",column:"name",condition:"course_id:"+$("#cursos_tab tr.selected").attr("data-id"),
-                            message:"El tema ? del curso "+$("#cursos_tab tr.selected td").text()+" ya existe"}}
-                    },
-                    errorPlacement:function(error,element){
-                        $(error).addClass('alert alert-danger')
-                        $(element).parent( ).append(error)
+                    url : "administrador/updatecourse",
+                    async : false,
+                    data : { id:$(tr).attr("data-id"),name:$(tr).find("td:nth-child(1)").text()},
+                    success : function () {
+                        editable(tr,false)
+                        $(hidden).removeClass("hidden")
+                        $(visible).addClass("hidden")
                     }
                 })
             }
-            else{
-                if(typeof datatable_themes !== "undefined")datatable_themes.fnDestroy()
-                $("#themes_tab").parent( ).addClass("hidden")
+            if($(this).text()=='Cancelar'){
+                $.ajax ( {
+                    type : "POST",
+                    url : "administrador/findcourse",
+                    async : false,
+                    data : { id:$(tr).attr("data-id")},
+                    success : function (course) {
+                        editable(tr,false)
+                        $(tr).find("td:nth-child(1)").text(course.name)
+                        $(hidden).removeClass("hidden")
+                        $(visible).addClass("hidden")
+                    }
+                })
+            }
+            if($(this).text()=='Eliminar'){
+                $.ajax ( {
+                    type : "POST",
+                    url : "administrador/deletecourse",
+                    async : false,
+                    data : { id:$(tr).attr("data-id")},
+                    success : function (){
+                        $(tr).remove()
+                        datatable_themes.fnDestroy ()
+                        $("#themes_tab").parent().addClass("hidden")
+                    }
+                })
             }
         })
         $("#themes_tab tbody").on( 'click', 'tr', function () {
@@ -165,6 +214,55 @@
             else {
                 $("#themes_tab tr.selected").removeClass('selected');
                 $(this).addClass('selected');
+            }
+        })
+        $("#themes_tab tbody").on( 'click', 'button', function (e) {
+            var tr=$(this).parent().parent()
+            var hidden=$(this).parent().find(".hidden")
+            var visible=$(this).parent().find(":not('.hidden')")
+            e.stopPropagation()
+            if($(this).text()=='Editar'){
+                editable(tr,true)
+                $(hidden).removeClass("hidden")
+                $(visible).addClass("hidden")
+            }
+            if($(this).text()=='Guardar'){
+                $.ajax ( {
+                    type : "POST",
+                    url : "administrador/updatetheme",
+                    async : false,
+                    data : { id:$(tr).attr("data-id"),name:$(tr).find("td:nth-child(1)").text()},
+                    success : function () {
+                        editable(tr,false)
+                        $(hidden).removeClass("hidden")
+                        $(visible).addClass("hidden")
+                    }
+                })
+            }
+            if($(this).text()=='Cancelar'){
+                $.ajax ( {
+                    type : "POST",
+                    url : "administrador/findtheme",
+                    async : false,
+                    data : { id:$(tr).attr("data-id")},
+                    success : function (theme) {
+                        editable(tr,false)
+                        $(tr).find("td:nth-child(1)").text(theme.name)
+                        $(hidden).removeClass("hidden")
+                        $(visible).addClass("hidden")
+                    }
+                })
+            }
+            if($(this).text()=='Eliminar'){
+                $.ajax ( {
+                    type : "POST",
+                    url : "administrador/deletetheme",
+                    async : false,
+                    data : { id:$(tr).attr("data-id")},
+                    success : function (){
+                        $(tr).remove()
+                    }
+                })
             }
         })
         function cleanForm(form){
@@ -182,8 +280,17 @@
             }
         })
         $("#add_curso_plus").click(function(){
+            var name=$("#add_curso_name").val()
             if($("#add_curso form").valid()){
-                add_names_cursos([$("#add_curso_name").val()])
+                $.ajax ( {
+                    type : "POST",
+                    url : "administrador/addcourses",
+                    async: false,
+                    data : {names:name,delimiter:","},
+                    success : function (courses) {
+                        add_cursos(courses)
+                    }
+                })
             }
             return false
         })
@@ -210,27 +317,32 @@
         })
         $("#addl_curso_aceptar").click(function(){
             var names=$("#addl_curso_names").val( ),delimiter=",";
-            var listnames=names.split(delimiter);
             if($("#addl_curso form").valid()){
                 $("#addl_curso").dialog('close')
-                add_names_cursos(listnames)
+                $.ajax ( {
+                    type : "POST",
+                    url : "administrador/addcourses",
+                    async: false,
+                    data : {names:names,delimiter:delimiter},
+                    success : function (courses) {
+                        add_cursos(courses)
+                    }
+                })
             }
             return false
         })
-        $("#cursos_guardar").click(function(){
-            /*$.ajax({
-                type: "POST",
-                async: false,
-                url: "administrador/validatecourses",
-                data: {delimiter:delimiter,names:names},
-                success: function(msg){
-                    if(msg!="")error=msg
-                }
-            })*/
-        })
         $("#add_theme_plus").click(function(){
+            var name=$("#add_theme_name").val()
             if($("#add_theme form").valid()){
-                add_names_themes([$("#add_theme_name").val()])
+                $.ajax ( {
+                    type : "POST",
+                    url : "administrador/addthemes",
+                    async: false,
+                    data : {names:name,course_id:$("#cursos_tab tr.selected").attr("data-id"),delimiter:","},
+                    success : function (themes) {
+                        add_themes(themes)
+                    }
+                })
             }
             return false
         })
@@ -258,10 +370,17 @@
         })
         $("#addl_theme_aceptar").click(function(){
             var names=$("#addl_theme_names").val( ),delimiter=",";
-            var listnames=names.split(delimiter)
             if($("#addl_theme form").valid()){
                 $("#addl_theme").dialog('close')
-                add_names_themes(listnames)
+                $.ajax ( {
+                    type : "POST",
+                    url : "administrador/addthemes",
+                    async: false,
+                    data : {names:names,course_id:$("#cursos_tab tr.selected").attr("data-id"),delimiter:delimiter},
+                    success : function(themes) {
+                        add_themes(themes)
+                    }
+                })
             }
             return false
         })

@@ -27,6 +27,16 @@ public class Course extends Model{
         course.save();
         return course;
     }
+    public Map getMap(){
+        Map<String,String> map=new HashMap<>();
+        map.put("id",id+"");
+        map.put("name",name);
+        return map;
+    }
+    public void updateName(String name){
+        this.name=name;
+        update();
+    }
     public static Model.Finder<Integer,Course> find = new Model.Finder<>(Integer.class,Course.class);
 
     public List<Theme> themes(int exam_id,int cycle_id){
