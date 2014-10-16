@@ -8,10 +8,30 @@
         </div>
     </div>
     <div class="row">
-    <div class="col-md-4" id="tree">
-        <style>
-
-        </style>
+    <div class="col-md-3" id="tree">
+        <div class="list-group">
+            <a class="list-group-item">Cursos y Temas</a>
+            <a class="list-group-item">Profesores</a>
+            <a class="list-group-item">Alumnos</a>
+            <a class="list-group-item">Usuarios</a>
+            <a class="list-group-item">Ciclos</a>
+            <div class="list-group" style="display:none">
+                <a class="list-group-item">secciones</a>
+                <a class="list-group-item">cursos</a>
+                <a class="list-group-item">asignaturas</a>
+            </div>
+        </div>
+        <script>
+            $("a.list-group-item").click(function(){
+                $("#tree").find(".active").removeClass("active")
+                $(this).addClass("active")
+                $(this).next("div.list-group").toggle()
+                $("#div_cursos").addClass("hidden")
+            })
+            $("a.list-group-item:contains('Cursos y Temas')" ).click(function(){
+                $("#div_cursos").removeClass("hidden")   
+            })
+        </script>
     </div>
     <div class="col-md-8">
         @content
