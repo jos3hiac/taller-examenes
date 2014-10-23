@@ -34,7 +34,7 @@ public class Theme extends Model{
         map.put("course_id",course.id+"");
         return map;
     }
-    public void updateName(String name){
+    public void update(String name){
         this.name=name;
         update();
     }

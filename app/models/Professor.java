@@ -31,7 +31,20 @@ public class Professor extends Model{
         professor.save();
         return professor;
     }
-    public static Finder<Integer,Professor> find = new Finder<>(Integer.class,Professor.class);
+    public Map getMap(){
+        Map<String,String> map=new HashMap<>();
+        map.put("id",id+"");
+        map.put("name",name);
+        map.put("lastname",lastname);
+        map.put("user_id",user.id+"");
+        return map;
+    }
+    public void update(String name,String lastname){
+        this.name=name;
+        this.lastname=lastname;
+        update();
+    }
+    public static Model.Finder<Integer,Professor> find = new Finder<>(Integer.class,Professor.class);
 
     public List<Cycle> cycles(){
         SqlQuery query = Ebean.createSqlQuery("select c.id cid from professor p join asignature a on (p.id=:id and p.id=a.professor_id) " +

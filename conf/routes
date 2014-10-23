@@ -18,14 +18,21 @@ POST        /profesor/updatechoiceidquestion        controllers.Profesor.updateC
 POST        /profesor/saveprofessorquestion         controllers.Profesor.saveProfessorQuestion()
 GET         /alumno                                 controllers.Alumno.index()
 GET         /administrador                          controllers.Administrador.index()
-POST        /administrador/findcourse               controllers.Administrador.findCourse()
-POST        /administrador/findtheme                controllers.Administrador.findTheme()
+
 POST        /administrador/listtheme                controllers.Administrador.listTheme()
+POST        /administrador/listcycle                controllers.Administrador.listCycle()
+POST        /administrador/listsection              controllers.Administrador.listSection()
+
 POST        /administrador/addcourses               controllers.Administrador.addCourses()
 POST        /administrador/addthemes                controllers.Administrador.addThemes()
-POST        /administrador/updatecourse             controllers.Administrador.updateCourse()
-POST        /administrador/updatetheme              controllers.Administrador.updateTheme()
-POST        /administrador/deletecourse             controllers.Administrador.deleteCourse()
-POST        /administrador/deletetheme              controllers.Administrador.deleteTheme()
+POST        /administrador/addcycles                controllers.Administrador.addCycles()
+POST        /administrador/addsections              controllers.Administrador.addSections()
+POST        /administrador/adduser                  controllers.Administrador.addUser()
+POST        /administrador/addprofessor             controllers.Administrador.addProfessor()
+POST        /administrador/addstudent               controllers.Administrador.addStudent()
+
+POST        /administrador/findmodel                controllers.Administrador.findModel()
+POST        /administrador/updatemodel              controllers.Administrador.updateModel()
+POST        /administrador/deletemodel              controllers.Administrador.deleteModel()
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                           controllers.Assets.at(path="/public", file)

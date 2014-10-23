@@ -1,9 +1,10 @@
 package models;
 
+import com.avaje.ebean.*;
 import play.db.ebean.Model;
 
 import javax.persistence.*;
-import java.util.List;
+import java.util.*;
 
 @Entity
 public class Academy extends Model{

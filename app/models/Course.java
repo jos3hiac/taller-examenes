@@ -33,7 +33,7 @@ public class Course extends Model{
         map.put("name",name);
         return map;
     }
-    public void updateName(String name){
+    public void update(String name){
         this.name=name;
         update();
     }

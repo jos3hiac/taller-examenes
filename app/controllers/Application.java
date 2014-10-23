@@ -9,6 +9,7 @@ import views.html.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -88,8 +89,12 @@ public class Application extends Controller {
         boolean exist=false;
         switch(model) {
             case "Course":exist=exist(Course.find.where(),column,value,conditions);break;
+            case "Theme":exist=exist(Theme.find.where(),column,value,conditions);break;
+            case "Cycle":exist=exist(Cycle.find.where(),column,value,conditions);break;
+            case "Section":exist=exist(Section.find.where(),column,value,conditions);break;
+            case "Professor":exist=exist(Professor.find.where(),column,value,conditions);break;
+            case "Student":exist=exist(Student.find.where(),column,value,conditions);break;
             case "User":exist=exist(User.find.where(),column,value,conditions);break;
-             case "Theme":exist=exist(Theme.find.where(),column,value,conditions);break;
         }
         return exist;
     }
@@ -115,10 +120,30 @@ public class Application extends Controller {
         return User.findByEmail(session("email"));
     }
     public static String getDate(Date date){
-        return new SimpleDateFormat("dd-MM-YY").format(date);
+        return new SimpleDateFormat("dd/MM/yy").format(date);
     }
     public static String getDate(Date date,String format){
         return new SimpleDateFormat(format).format(date);
+    }
+    public static Date getDate(String input){
+        List<SimpleDateFormat> formats = new ArrayList<>();
+        formats.add(new SimpleDateFormat("dd/MM/yy"));formats.add(new SimpleDateFormat("dd-MM-yy"));
+        Date date = null;
+        if(input == null) {
+            return null;
+        }
+        for (SimpleDateFormat format : formats) {
+            try {
+                format.setLenient(false);
+                date = format.parse(input);
+            } catch (ParseException e) {
+                //Shhh.. try other formats
+            }
+            if (date != null) {
+                break;
+            }
+        }
+        return date;
     }
     public static boolean B64ToFile(String base,String path,String filename){
         boolean error=false;

@@ -22,14 +22,24 @@
             </div>
         </div>
         <script>
+            $("a.list-group-item:first-child").addClass("active")
             $("a.list-group-item").click(function(){
                 $("#tree").find(".active").removeClass("active")
                 $(this).addClass("active")
                 $(this).next("div.list-group").toggle()
-                $("#div_cursos").addClass("hidden")
+                $("#div_cursos").parent().children().addClass("hidden")
             })
-            $("a.list-group-item:contains('Cursos y Temas')" ).click(function(){
-                $("#div_cursos").removeClass("hidden")   
+            $("a.list-group-item:eq(0)").click(function(){
+                $("#div_cursos").removeClass("hidden")
+            })
+            $("a.list-group-item:eq(1)").click(function(){
+                $("#div_profesores").removeClass("hidden")
+            })
+            $("a.list-group-item:eq(4)").click(function(){
+                $("#div_ciclos").removeClass("hidden")
+            })
+            $("a.list-group-item:eq(5)").click(function(){
+                $("#div_ciclo_secciones").removeClass("hidden")
             })
         </script>
     </div>
