@@ -34,7 +34,7 @@ public class Student extends Model{
         map.put("name",name);
         map.put("lastname",lastname);
         map.put("user_id",user.id+"");
-        map.put("section_id",section.id+"");
+        if(section!=null)map.put("section_id",section.id+"");
         return map;
     }
     public void updateSection(int section_id){
@@ -46,5 +46,5 @@ public class Student extends Model{
         this.lastname=lastname;
         update();
     }
-    public static Finder<Integer,Student> find = new Finder<>(Integer.class,Student.class);
+    public static Model.Finder<Integer,Student> find = new Finder<>(Integer.class,Student.class);
 }

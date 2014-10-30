@@ -57,6 +57,24 @@ public class Administrador extends Controller {
         }
         return ok(Json.toJson(sections));
     }
+    public static Result listCycleCourses(){
+        DynamicForm data = form().bindFromRequest();
+        int cycle_id=Integer.parseInt(data.get("cycle_id"));
+        List<Map<String, String>> courses=new ArrayList<>();
+        for (Course course : Cycle.find.byId(cycle_id).courses){
+            courses.add(course.getMap());
+        }
+        return ok(Json.toJson(courses));
+    }
+    public static Result listCoursesNotInCycle(){
+        DynamicForm data = form().bindFromRequest();
+        int cycle_id=Integer.parseInt(data.get("cycle_id"));
+        List<Map<String, String>> courses=new ArrayList<>();
+        for (Course course : Course.NotInCycle(cycle_id)){
+            courses.add(course.getMap());
+        }
+        return ok(Json.toJson(courses));
+    }
     public static Result addCourses(){
         DynamicForm data = form().bindFromRequest();
         List<Map<String, String>> courses=new ArrayList<>();
@@ -95,6 +113,14 @@ public class Administrador extends Controller {
             sections.add(section.getMap());
         }
         return ok(Json.toJson(sections));
+    }
+    public static Result addCycleCourse(){
+        DynamicForm data = form().bindFromRequest();
+        int cycle_id=Integer.parseInt(data.get("cycle_id"));
+        int course_id=Integer.parseInt(data.get("course_id"));
+        Course course=Course.find.byId(course_id);
+        Cycle.find.byId(cycle_id).addCourse(course);
+        return ok(Json.toJson(course.getMap()));
     }
     public static Result addProfessor(){
         DynamicForm data = form().bindFromRequest();
@@ -139,6 +165,7 @@ public class Administrador extends Controller {
             case "section":Section.find.byId(id).delete();break;
             case "professor":Professor.find.byId(id).user.delete();Professor.find.byId(id).delete();break;
             case "student":Student.find.byId(id).user.delete();Student.find.byId(id).delete();break;
+            case "cyclexcourse":Cycle.find.byId(Integer.parseInt(data.get("cycle_id"))).removeCourse(id);
         }
         return ok();
     }

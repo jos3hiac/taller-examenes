@@ -1,5 +1,6 @@
 package models;
 
+import com.avaje.ebean.*;
 import controllers.Application;
 import play.db.ebean.Model;
 
@@ -48,6 +49,22 @@ public class Cycle extends Model{
         this.duration=duration;
         if(Application.getDate(startDate)!=null)this.startDate=Application.getDate(startDate);
         if(Application.getDate(lastDate)!=null)this.lastDate=Application.getDate(lastDate);
+        update();
+    }
+    public void addCourse(int course_id){
+        Course course=Course.find.byId(course_id);
+        addCourse(course);
+    }
+    public void addCourse(Course course){
+        courses.add(course);
+        update();
+    }
+    public void removeCourse(int course_id){
+        Course course=Course.find.byId(course_id);
+        removeCourse(course);
+    }
+    public void removeCourse(Course course){
+        courses.remove(course);
         update();
     }
     public static Model.Finder<Integer,Cycle> find = new Finder<>(Integer.class,Cycle.class);

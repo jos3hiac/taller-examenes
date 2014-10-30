@@ -7,8 +7,8 @@
             <div id="add_curso">
                 <form class="form-horizontal">
                     <input type="text" id="add_curso_name" name="name" placeholder="Nombre..." style="width: 130px">
-                    <button id="add_curso_plus" class="btn btn-sm btn-primary">+</button>
-                    <button id="curso_addl" class="btn btn-sm btn-primary">+ lista</button>
+                    <input type="button" id="add_curso_plus" class="btn btn-sm btn-primary" value="+">
+                    <input type="button" id="curso_addl" class="btn btn-sm btn-primary" value="+ lista">
                 </form>
             </div>
             <table id="cursos_tab" class="display">
@@ -39,7 +39,7 @@
                         <label class="col-md-4">Nombres:</label>
                         <textarea id="addl_curso_names" name="names" rows="6" cols="35"></textarea>
                     </div>
-                    <button id="addl_curso_aceptar" class="btn btn-primary">Aceptar</button>
+                    <input type="button" id="addl_curso_aceptar" class="btn btn-primary" value="Aceptar">
                 </form>
             </div>
         </div>
@@ -48,8 +48,8 @@
             <div id="add_theme">
                 <form class="form-horizontal">
                     <input type="text" id="add_theme_name" name="name" placeholder="Nombre..." style="width: 130px">
-                    <button id="add_theme_plus" class="btn btn-sm btn-primary">+</button>
-                    <button id="theme_addl" class="btn btn-sm btn-primary">+ lista</button>
+                    <input type="button" id="add_theme_plus" class="btn btn-sm btn-primary" value="+">
+                    <input type="button" id="theme_addl" class="btn btn-sm btn-primary" value="+ lista">
                 </form>
             </div>
             <table id="themes_tab" class="display">
@@ -69,7 +69,7 @@
                         <label class="col-md-4">Nombres:</label>
                         <textarea id="addl_theme_names" name="names" rows="6" cols="35"></textarea>
                     </div>
-                    <button id="addl_theme_aceptar" class="btn btn-primary">Aceptar</button>
+                    <input type="button" id="addl_theme_aceptar" class="btn btn-primary" value="Aceptar">
                 </form>
             </div>
         </div>
@@ -79,21 +79,35 @@
             if(edit)$(this).attr("contenteditable",edit)
             else $(this).removeAttr("contenteditable")
         }
-        $.fn.add_tr_model=function(model,attrs){
-            var tr='<tr data-id="'+model.id+'">'
-            for(var i in attrs){
-                tr+='<td>'+model[attrs[i]]+'</td>'
+        $.fn.add_tr_model=function(model,attrs,btns){
+            if($(this).is("tbody")){
+                var tr='<tr data-id="'+model.id+'">'
+                for(var i in attrs){
+                    tr+='<td>'+model[attrs[i]]+'</td>'
+                }
+                tr+='<td>'
+                for(var i in btns){
+                    if(btns[i]=="Editar"){
+                        tr+='<button class="btn btn-sm btn-primary">Editar</button>'+
+                        '<button class="btn btn-sm btn-primary hidden">Guardar</button>'+
+                        '<button class="btn btn-sm btn-primary hidden">Cancelar</button>'
+                    }
+                    else if(btns[i]=="Eliminar") {
+                        tr+='<button class="btn btn-sm btn-danger">'+btns[i]+'</button>'
+                    }
+                    else{
+                        tr+='<button class="btn btn-sm btn-primary">'+btns[i]+'</button>'
+                    }
+                }
+                tr+='</td></tr>'
+                $(this).append(tr)
+                //if($(this).parent().data("datatable")!==undefined)$(this).parent().data("datatable").DataTable().row.add($(tr)).draw()
             }
-            tr+='<td><button class="btn btn-sm btn-primary">Editar</button>'+
-                '<button class="btn btn-sm btn-primary hidden">Guardar</button>'+
-                '<button class="btn btn-sm btn-primary hidden">Cancelar</button>'+
-                '<button class="btn btn-sm btn-danger">Eliminar</button></td></tr>'
-            if($(this).is("tbody"))$(this).append(tr)
         }
-        $.fn.add_model=function(modelArray,attrs){
+        $.fn.add_model=function(modelArray,attrs,btns){
             if($(this).is("tbody")) {
                 for ( var i in modelArray ) {
-                    $(this).add_tr_model(modelArray[i],attrs)
+                    $(this).add_tr_model(modelArray[i],attrs,btns!==undefined?btns:["Editar","Eliminar"])
                 }
             }
         }
@@ -110,7 +124,7 @@
                 $(this).removeData("datatable")
             }
         }
-        $.fn.update_datatable=function(url,data,attrs){
+        $.fn.update_datatable=function(url,data,attrs,btns){
             if($(this).is("table")){
                 var table=this
                 $.ajax ( {
@@ -122,7 +136,7 @@
                         if($(table).data("datatable") !== undefined)$(table).remove_datatable()
                         if($(table).parent().hasClass("hidden"))$(table).parent().removeClass("hidden")
                         $(table).find("tbody").text("")
-                        $(table).find("tbody").add_model(modelArray,attrs)
+                        $(table).find("tbody").add_model(modelArray,attrs,btns)
                         $(table).add_datatable()
                     }
                 } )
@@ -140,6 +154,7 @@
                 if(update)$(this).cleanForm()
                 $(this ).validate ( {
                     rules : rules,
+                    errorElement:'div',
                     errorPlacement : function ( error, element ) {
                         $ ( error ).addClass ('alert alert-danger').css(errorCss || {})
                         if(errorPlace === undefined)$(element).parent().append(error)
@@ -218,7 +233,8 @@
                             async : false,
                             data : { model:modelName,id:$(tr).attr("data-id")},
                             success : function (){
-                                $(tr).remove()
+                                //$(tr).remove()
+                                $(table).data("datatable").DataTable().row(tr).remove().draw()
                                 if($(table).attr("id")=="cursos_tab"){
                                     $("#themes_tab").remove_datatable()
                                     $("#themes_tab").parent().addClass("hidden")
@@ -229,10 +245,10 @@
                 })
             }
         }
-        $.fn.new_model=function(form,modelName,data,attrs,dialog){
+        $.fn.new_model=function(form,modelName,data,attrs,btns,dialog){
             if($(this).is("table")){
                 var table=this
-                if($(form).valid()){
+                if(form && $(form).valid()){
                     if(dialog)$(form).parent().dialog('close')
                     $.ajax ( {
                         type : "POST",
@@ -241,7 +257,7 @@
                         data : data,
                         success : function (modelArray) {
                             $(table).remove_datatable()
-                            $(table).find("tbody").add_model($.isArray(modelArray)?modelArray:[modelArray],attrs)
+                            $(table).find("tbody").add_model($.isArray(modelArray)?modelArray:[modelArray],attrs,btns)
                             $(table).add_datatable()
                         }
                     })
@@ -249,11 +265,11 @@
             }
         }
 
-        var attrsCurso=["name"]
-        var attrsTheme=["name"]
+        attrsCurso=["name"]
+        attrsTheme=["name"]
         $("#cursos_tab").add_datatable()
         $("#cursos_tab tbody").selectable()
-        $("#cursos_tab tbody").on( 'click', 'tr', function (e) {
+        $("#cursos_tab tbody").on( 'click', 'tr', function () {
             $ ("#themes_tab").update_datatable("administrador/listtheme",{course_id:$(this).attr("data-id")},attrsCurso)
             $ ("#add_theme form").myValidate(true,{
                 name:{required:true,exist:{model:"Theme",column:"name",condition:"course_id:"+$("#cursos_tab tr.selected").attr("data-id"),
@@ -268,7 +284,6 @@
         })
         $("#add_curso_plus").click(function(){
             $("#cursos_tab").new_model($("#add_curso form"),"courses",{names:$("#add_curso_name").val(),delimiter:","},attrsCurso)
-            return false
         })
         $("#addl_curso").dialog({
             autoOpen:false,
@@ -279,17 +294,15 @@
         $("#curso_addl").click(function(){
             $("#addl_curso form").myValidate(true,{
                     names:{required:true,listexist:{model:"Course",column:"name",message:"Los cursos: ? ya existen",
-                        delimiter:","}}},{"margin-left":15},"after")
+                        delimiter:","}}})
             $("#addl_curso").dialog("open")
         })
         $("#addl_curso_aceptar").click(function(){
             $("#cursos_tab").new_model($("#addl_curso form"),"courses",{names:$("#addl_curso_names").val(),delimiter:","},attrsCurso,true)
-            return false
         })
         $("#add_theme_plus").click(function(){
             $("#themes_tab").new_model($("#add_theme form"),"themes",{names:$("#add_theme_name").val(),delimiter:",",
                 course_id:$("#cursos_tab tr.selected").attr("data-id")},attrsTheme)
-            return false
         })
         $("#addl_theme").dialog({
             autoOpen:false,
@@ -301,13 +314,12 @@
             $("#addl_theme form").myValidate(true,{
                     names:{required:true,listexist:{model:"Theme",column:"name",condition:"course_id:"+$("#cursos_tab tr.selected").attr("data-id"),
                         message:"Los temas: ? del curso "+$("#cursos_tab tr.selected td").text()+" ya existen",
-                        delimiter:","}}},{"margin-left":15},"after")
+                        delimiter:","}}})
             $("#addl_theme").dialog("open")
         })
         $("#addl_theme_aceptar").click(function(){
             $("#themes_tab").new_model($("#addl_theme form"),"themes",{names:$("#addl_theme_names").val(),delimiter:",",
                 course_id:$("#cursos_tab tr.selected").attr("data-id")},attrsTheme,true)
-            return false
         })
     </script>
     <div id="div_ciclos" class="col-md-10 hidden">
@@ -316,7 +328,7 @@
             <div id="add_ciclo">
                 <form class="form-horizontal col-md-8">
                     <input type="text" id="add_ciclo_name" name="name" placeholder="Nombre..." style="width: 200px">
-                     <button id="add_ciclo_plus" class="btn btn-sm btn-primary">+</button>
+                     <input type="button" id="add_ciclo_plus" class="btn btn-sm btn-primary" value="+">
                 </form>
             </div>
             <table id="ciclos_tab" class="display">
@@ -335,30 +347,94 @@
         </div>
     </div>
     <script>
+        $.fn.update_select=function(url,data,attrName){
+            var select=this
+            $.ajax ({
+                type : "POST",
+                url : url,
+                async : false,
+                data :data,
+                success : function (modelArray){
+                    console.log(modelArray)
+                    $(select).text("")
+                    var opts=""
+                    for ( var i in modelArray){
+                        opts+='<option value="'+modelArray[i].id+'">'+modelArray[i][attrName]+'</option>'
+                    }
+                    $(select).append(opts)
+                }
+            })
+        }
         $("#ciclos_tab").add_datatable()
-        var attrs=["name","duration","startDate","lastDate"]
-        $ ("#ciclos_tab").update_datatable("administrador/listcycle",{academy_id:1},attrs)
+        attrsCycle=["name","duration","startDate","lastDate"]
+        btnsCycle=["Editar","Ver","Eliminar"]
+        $ ("#ciclos_tab").update_datatable("administrador/listcycle",{academy_id:1},attrsCycle,btnsCycle)
         $("#ciclos_tab tbody").selectable()
-        $("#ciclos_tab tbody").acciones("cycle",attrs)
+        $("#ciclos_tab tbody").acciones("cycle",attrsCycle)
+        $("#ciclos_tab tbody").on("click","button",function(e){
+            e.stopPropagation()
+            var tr=$(this).parent().parent()
+            if($(this).text()=="Ver"){
+                var div=$("a.list-group-item:eq(4)").next("div.list-group")
+                div.data("visible",true)
+                div.css("display","block")
+                $.ajax ( {
+                    type : "POST",
+                    url : "administrador/findmodel",
+                    async : false,
+                    data : { model:"cycle",id:$(tr).attr("data-id")},
+                    success : function (model) {
+                        $("#div_ciclos").data("cycle",model)
+                    }
+                })
+                $ ("#ciclo_secciones_tab").update_datatable("administrador/listsection",{cycle_id:$("#div_ciclos").data("cycle").id},attrsSeccion)
+                $("#add_ciclo_seccion form" ).myValidate(true,{
+                    name:{required:true,exist:{model:"Section",column:"name",condition:"cycle_id:"+tr.attr("data-id"),
+                        message:"La seccion ? del ciclo "+$("#div_ciclos").data("cycle").name+" ya existe"}}
+                })
+                $("a.list-group-item:eq(5)").click()
+
+                attrsCourse=["name"]
+                btnsCourse=["Eliminar"]
+                $("#ciclo_cursos_tab").update_datatable("administrador/listcyclexcourses",{cycle_id:$("#div_ciclos").data("cycle").id},attrsCourse,btnsCourse)
+                $("#add_ciclo_curso form").myValidate(false,{
+                    cursos:{required:true}
+                })
+                $("#add_ciclo_curso_list").update_select("administrador/listcoursesnotincycle",{cycle_id:$("#div_ciclos").data("cycle").id},"name")
+                $("#ciclo_cursos_tab tbody").on("click","button",function(e){
+                    e.stopPropagation()
+                    var tr=$(this).parent().parent()
+                    if($(this).text()=="Eliminar"){
+                        $.ajax ({
+                            type : "POST",
+                            url : "administrador/deletemodel",
+                            async : false,
+                            data : { model:"cyclexcourse",id:$(tr).attr("data-id"),cycle_id:$("#div_ciclos").data("cycle").id},
+                            success : function (){
+                                var table=$(tr).parent( ).parent( )
+                                $(table).data("datatable").DataTable().row(tr).remove().draw()
+                            }
+                        })
+                        $("#add_ciclo_curso_list").update_select("administrador/listcoursesnotincycle",{cycle_id:$("#div_ciclos").data("cycle").id},"name")
+                    }
+                })
+            }
+        })
         $("#add_ciclo form").myValidate(false,{
             name:{required:true,exist:{model:"Cycle",column:"name",condition:"academy_id:1",message:"El ciclo ? ya existe"}}
         })
         $("#add_ciclo_plus").click(function(){
-            $("#ciclos_tab").new_model($("#add_ciclo form"),"cycles",{names:$("#add_ciclo_name").val(),delimiter:",",academy_id:1},attrs)
-            return false
+            $("#ciclos_tab").new_model($("#add_ciclo form"),"cycles",{names:$("#add_ciclo_name").val(),delimiter:",",academy_id:1},attrsCycle,btnsCycle)
         })
     </script>
     <div id="div_ciclo_secciones" class="col-md-10 hidden">
         <div class="col-md-8">
-            <div>
-                <h3 style="display: inline-block">Ciclo</h3>
-                <input id="seccion_ciclo_id">
-            </div>
-            <h3 style="display: inline-block">Secciones</h3>
+            <h3>Ciclo </h3>
+            <h3>Secciones</h3>
             <div id="add_ciclo_seccion">
                 <form class="form-horizontal col-md-8">
                     <input type="text" id="add_ciclo_seccion_name" name="name" placeholder="Nombre..." style="width: 100px">
-                     <button id="add_ciclo_seccion_plus" class="btn btn-sm btn-primary">+</button>
+                     <input type="button" id="add_ciclo_seccion_plus" class="btn btn-sm btn-primary" value="+">
                 </form>
             </div>
             <table id="ciclo_secciones_tab" class="display">
@@ -375,8 +451,11 @@
     </div>
     <script>
         $("a.list-group-item:eq(5)").click(function(){
-            start_autocomplete()
-        })
+            if($("#div_ciclos").data("cycle") !== undefined){
+                $("#div_ciclo_secciones h3:first-child").text("Ciclo "+$("#div_ciclos").data("cycle").name)
+                $("#div_ciclo_secciones").removeClass("hidden")
+            }
+        })/*
         function start_autocomplete(){
             $.ajax ( {
                 type : "POST",
@@ -392,53 +471,79 @@
                         source: source,
                         select: function(event, ui) {
                             $("#seccion_ciclo_id").data("item",ui.item)
-                            $ ("#ciclo_secciones_tab").update_datatable("administrador/listsection",{cycle_id:$(this).data("item" ).id},attrsSeccion)
-                            $("#add_ciclo_seccion form" ).myValidate(true,{
-                                name:{required:true,exist:{model:"Section",column:"name",condition:"cycle_id:"+$("#seccion_ciclo_id").data("item").id,
-                                    message:"La seccion ? del ciclo "+$("#seccion_ciclo_id").data("item").label+" ya existe"}}
-                            })
-                            $("#add_ciclo_seccion_plus").click(function(){
-                                $("#ciclo_secciones_tab").new_model($("#add_ciclo_seccion form"),"sections",{names:$("#add_ciclo_seccion_name").val(),
-                                    delimiter:",",cycle_id:$("#seccion_ciclo_id").data("item").id},attrsSeccion)
-                                return false
-                            })
                         }
                     })
                 }
             })
-        }
-        var attrsSeccion=["name"]
+        }*/
+        attrsSeccion=["name"]
         $("#ciclo_secciones_tab").add_datatable()
         $("#ciclo_secciones_tab tbody" ).selectable()
         $("#ciclo_secciones_tab tbody" ).acciones("section",attrsSeccion)
+        $("#add_ciclo_seccion_plus").click(function(){
+                $("#ciclo_secciones_tab").new_model($("#add_ciclo_seccion form"),"sections",{names:$("#add_ciclo_seccion_name").val(),
+                    delimiter:",",cycle_id:$("#div_ciclos").data("cycle").id},attrsSeccion)
+            })
+    </script>
+    <div id="div_ciclo_cursos" class="col-md-10 hidden">
+        <div class="col-md-8">
+            <h3>Ciclo </h3>
+            <h3>Cursos</h3>
+            <div id="add_ciclo_curso">
+                <form class="form-horizontal col-md-8">
+                    <select id="add_ciclo_curso_list" name="cursos">
+                    </select>
+                    <input type="button" id="add_ciclo_curso_plus" class="btn btn-sm btn-primary" value="+">
+                </form>
+            </div>
+            <table id="ciclo_cursos_tab" class="display">
+                <thead>
+                    <tr style="cursor: pointer">
+                        <th>Nombre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        $("a.list-group-item:eq(6)").click(function(){
+            if($("#div_ciclos").data("cycle") !== undefined){
+                $("#div_ciclo_cursos h3:first-child").text("Ciclo "+$("#div_ciclos").data("cycle").name)
+                $("#div_ciclo_cursos").removeClass("hidden")
+            }
+        })
+        attrsCourse=["name"]
+        btnsCourse=["Eliminar"]
+        $("#ciclo_cursos_tab").add_datatable()
+        $("#ciclo_cursos_tab tbody").selectable()
+        $("#add_ciclo_curso_plus").click(function(){
+            var cycle_id=$("#div_ciclos").data("cycle").id
+            $("#ciclo_cursos_tab").new_model($("#add_ciclo_curso form"),"cyclexcourse",{cycle_id:cycle_id,
+                course_id:$("#add_ciclo_curso_list").val()},attrsCourse,btnsCourse)
+            $("#add_ciclo_curso_list").update_select("administrador/listcoursesnotincycle",{cycle_id:cycle_id},"name")
+        })
+    </script>
+    <div id="div_ciclo_asignaturas" class="col-md-10 hidden">
+        <div class="col-md-8">
+            <h3>Ciclo </h3>
+            <h3>Asignaturas</h3>
+        </div>
+    </div>
+    <script>
+        $("a.list-group-item:eq(7)").click(function(){
+            if($("#div_ciclos").data("cycle") !== undefined){
+                $("#div_ciclo_asignaturas h3:first-child").text("Ciclo "+$("#div_ciclos").data("cycle").name)
+                $("#div_ciclo_asignaturas").removeClass("hidden")
+            }
+        })
     </script>
     <div id="div_profesores" class="col-md-10 hidden">
         <div class="col-md-12">
             <h3 style="display: inline-block">Profesores</h3>
             <div id="add_profesor">
-                <form class="form-horizontal col-md-7">
-                    <div>
-                        <label class="col-md-4">Email:</label>
-                        <input type="text" id="add_profesor_user_email" name="user_email" placeholder="Email..." style="width: 200px">
-                    </div>
-                    <div>
-                        <label class="col-md-4">Password:</label>
-                        <input type="password" id="add_profesor_user_pass" name="user_pass" placeholder="Password..." style="width: 200px">
-                    </div>
-                     <button id="add_profesor_next" class="btn btn-sm btn-primary">siguiente</button>
-                </form>
-                <form class="form-horizontal col-md-8 hidden">
-                    <div>
-                        <label class="col-md-4">Nombre:</label>
-                        <input type="text" id="add_profesor_name" name="name" placeholder="Nombre..." style="width: 200px">
-                    </div>
-                    <div>
-                        <label class="col-md-4">Apellidos:</label>
-                        <input type="text" id="add_profesor_lastname" name="lastname" placeholder="Apellidos..." style="width: 200px">
-                    </div>
-                    <button id="add_profesor_back" class="btn btn-sm btn-primary">Atras</button>
-                    <button id="add_profesor_save" class="btn btn-sm btn-primary">Guardar</button>
-                </form>
             </div>
             <table id="profesores_tab" class="display">
                 <thead>
@@ -466,30 +571,87 @@
         </div>
     </div>
     <script>
+        $.fn.formularios=function(forms,buttonObj){
+            if(!$(this).is("div")) return false
+            for(var i in forms){
+                var form=document.createElement("form")
+                var formObj=forms[i][0]
+                $(form).addClass("form-horizontal").addClass(formObj.attrClass).css(formObj.attrCss)
+                if(i>0)$(form).addClass("hidden")
+                for(var j in forms[i][1]){
+                    var content=forms[i][1][j]
+                    var div=document.createElement("div")
+                    if(content.hasOwnProperty("label")){
+                        var label=document.createElement("label")
+                        $(label).addClass("col-md-4").text(content["label"]["text"])
+                        $(div).append(label)
+                    }
+                    if(content.hasOwnProperty("input")){
+                        var input=document.createElement("input")
+                        $(input).attr("type",content["input"]["type"]).attr("id",content["input"]["id"]).attr("name",content["input"]["name"])
+                            .attr("placeholder",content["input"]["placeholder"]).css(content["input"]["attrCss"])
+                        $(div).append(input)
+                    }
+                    $(form).append(div)
+                }
+                function createButton(value){
+                    var button=document.createElement("input")
+                    $(button).attr("type","button").attr("value",value).addClass("btn btn-sm btn-primary")
+                    if(value=="atras"){
+                        $(button).click(function(){
+                            var form=$(this).parent()
+                            $(form).prev("form").removeClass("hidden")
+                            $(form).addClass("hidden")
+                        })
+                    }
+                    if(value=="siguiente"){
+                        $(button).click(function(){
+                            var form=$(this).parent()
+                            if($(form).valid()){
+                                $(form).next("form").removeClass("hidden")
+                                $(form).addClass("hidden")
+                            }
+                        })
+                    }
+                    return button
+                }
+                if(i==0){
+                    var buttonNext=createButton("siguiente")
+                    $(form).append(buttonNext)
+                }
+                else if(i<forms.length-1){
+                    var buttonBack=createButton("atras")
+                    $(form).append(buttonBack)
+                    var buttonNext=createButton("siguiente")
+                    $(form).append(buttonNext)
+                }
+                else{
+                    var buttonBack=createButton("atras")
+                    $(form).append(buttonBack)
+                    var button=createButton(buttonObj["value"])
+                    $(button).attr("id",buttonObj["id"])
+                    $(form).append(button)
+                }
+                $(this).append(form)
+            }
+        }
+        $("#add_profesor").formularios([[{attrClass:"col-md-7",attrCss:""},[
+            {"label":{"text":"Email:"},"input":{"type":"text","id":"add_profesor_user_email","name":"user_email","placeholder":"Email...","attrCss":"width: 200px"}},
+            {"label":{"text":"Password:"},"input":{"type":"password","id":"add_profesor_user_pass","name":"user_pass","placeholder":"Password...","attrCss":"width: 200px"}}]],
+            [{attrClass:"col-md-8",attrCss:""},[
+            {"label":{"text":"Nombres:"},"input":{"type":"text","id":"add_profesor_name","name":"name","placeholder":"Nombres...","attrCss":"width: 200px"}},
+            {"label":{"text":"Apellidos:"},"input":{"type":"text","id":"add_profesor_lastname","name":"lastname","placeholder":"Apellidos...","attrCss":"width: 200px"}}]]
+        ],{"id":"add_profesor_save","value":"guardar"})
         $("#profesores_tab").add_datatable()
-        var attrs=["name","lastname"]
+        attrsProfessor=["name","lastname"]
         $("#profesores_tab tbody").selectable()
-        $("#profesores_tab tbody").acciones("professor",attrs)
+        $("#profesores_tab tbody").acciones("professor",attrsProfessor)
         $("#add_profesor form:nth-child(1)").myValidate(true,{
             user_email:{required:true,email:true,exist:{model:"User",column:"email",message:"El usuario con email ? ya existe"}},
             user_pass:{required:true,minlength:3,maxlength:15}},{"margin-left":15},"after")
         $("#add_profesor form:nth-child(2)").myValidate(true,{
             name:{required:true},
             lastname:{required:true}},{"margin-left":15},"after")
-        $("#add_profesor_next").click(function(){
-            var form=$("#add_profesor form:nth-child(1)")
-            if(form.valid()){
-                form.addClass("hidden")
-                $("#add_profesor form:nth-child(2)").removeClass("hidden")
-            }
-            return false
-        })
-        $("#add_profesor_back").click(function(){
-            var form=$("#add_profesor form:nth-child(2)")
-            form.addClass("hidden")
-            $("#add_profesor form:nth-child(1)").removeClass("hidden")
-            return false
-        })
         $("#add_profesor_save").click(function(){
             var form=$("#add_profesor form:nth-child(2)")
             if(form.valid()){
@@ -517,13 +679,95 @@
                                 }
                             })
                             $("#profesores_tab").new_model($("#add_profesor form:nth-child(2)"),"professor",{name:$("#add_profesor_name").val(),
-                                lastname:$("#add_profesor_lastname").val(),user_id:user_id},attrs)
+                                lastname:$("#add_profesor_lastname").val(),user_id:user_id},attrsProfessor)
                             $("#add_profesor_back").trigger("click")
                         }
                     }
                 })
             }
-            return false
+        })
+    </script>
+    <div id="div_alumnos" class="col-md-10 hidden">
+        <div class="col-md-12">
+            <h3 style="display: inline-block">Alumnos</h3>
+            <div id="add_alumno">
+            </div>
+            <table id="alumnos_tab" class="display">
+                <thead>
+                    <tr style="cursor: pointer">
+                        <th>Nombre</th>
+                        <th>Apellidos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for(student <- Student.find.all()) {
+                        <tr data-id="@{student.id}">
+                            <td>@student.name</td>
+                            <td>@student.lastname</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary">Editar</button>
+                                <button class="btn btn-sm btn-primary hidden">Guardar</button>
+                                <button class="btn btn-sm btn-primary hidden">Cancelar</button>
+                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        $("#add_alumno").formularios([[{attrClass:"col-md-7",attrCss:""},[
+            {"label":{"text":"Email:"},"input":{"type":"text","id":"add_alumno_user_email","name":"user_email","placeholder":"Email...","attrCss":"width: 200px"}},
+            {"label":{"text":"Password:"},"input":{"type":"password","id":"add_alumno_user_pass","name":"user_pass","placeholder":"Password...","attrCss":"width: 200px"}}]],
+            [{attrClass:"col-md-8",attrCss:""},[
+            {"label":{"text":"Nombres:"},"input":{"type":"text","id":"add_alumno_name","name":"name","placeholder":"Nombres...","attrCss":"width: 200px"}},
+            {"label":{"text":"Apellidos:"},"input":{"type":"text","id":"add_alumno_lastname","name":"lastname","placeholder":"Apellidos...","attrCss":"width: 200px"}}]]
+        ],{"id":"add_alumno_save","value":"guardar"})
+        $("#alumnos_tab").add_datatable()
+        attrsStudent=["name","lastname"]
+        $("#alumnos_tab tbody").selectable()
+        $("#alumnos_tab tbody").acciones("student",attrsStudent)
+        $("#add_alumno form:nth-child(1)").myValidate(true,{
+            user_email:{required:true,email:true,exist:{model:"User",column:"email",message:"El usuario con email ? ya existe"}},
+            user_pass:{required:true,minlength:3,maxlength:15}},{"margin-left":15},"after")
+        $("#add_alumno form:nth-child(2)").myValidate(true,{
+            name:{required:true},
+            lastname:{required:true}},{"margin-left":15},"after")
+        $("#add_alumno_save").click(function(){
+            var form=$("#add_alumno form:nth-child(2)")
+            if(form.valid()){
+                $.ajax({
+                    type: "POST",
+                    async: false,
+                    url: "validateexist",
+                    data: {model:"Student",column:"name",value:$("#add_alumno_name").val(),condition:"lastname:"+$("#add_alumno_lastname").val(),
+                        message:"El alumno ? "+$("#add_alumno_lastname").val()+" ya existe"},
+                    success: function(msg){
+                        if(msg!=""){
+                            $("#add_alumno form:nth-child(2)").find(".alert").remove()
+                            $("#add_alumno_lastname").after('<div>'+msg+'</div>')
+                            $("#add_alumno_lastname").next().addClass('alert alert-danger').css({"margin-left":15})
+                        }
+                        else{
+                            var user_id=0
+                            $.ajax ( {
+                                type : "POST",
+                                url : "administrador/adduser",
+                                async: false,
+                                data : {email:$("#add_alumno_user_email").val(),pass:$("#add_alumno_user_pass").val(),role_id:2},
+                                success : function (user) {
+                                    user_id=user.id
+                                }
+                            })
+                            $("#alumnos_tab").new_model($("#add_alumno form:nth-child(2)"),"student",{name:$("#add_alumno_name").val(),
+                                lastname:$("#add_alumno_lastname").val(),user_id:user_id},attrsStudent)
+                            $("#add_alumno_back").trigger("click")
+                        }
+                    }
+                })
+            }
         })
     </script>
 }

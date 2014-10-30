@@ -26,7 +26,8 @@
             $("a.list-group-item").click(function(){
                 $("#tree").find(".active").removeClass("active")
                 $(this).addClass("active")
-                $(this).next("div.list-group").toggle()
+                if($(this).next("div.list-group").data("visible")!== undefined)
+                    $(this).next("div.list-group").toggle()
                 $("#div_cursos").parent().children().addClass("hidden")
             })
             $("a.list-group-item:eq(0)").click(function(){
@@ -35,11 +36,11 @@
             $("a.list-group-item:eq(1)").click(function(){
                 $("#div_profesores").removeClass("hidden")
             })
+            $("a.list-group-item:eq(2)").click(function(){
+                $("#div_alumnos").removeClass("hidden")
+            })
             $("a.list-group-item:eq(4)").click(function(){
                 $("#div_ciclos").removeClass("hidden")
-            })
-            $("a.list-group-item:eq(5)").click(function(){
-                $("#div_ciclo_secciones").removeClass("hidden")
             })
         </script>
     </div>

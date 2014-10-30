@@ -62,4 +62,16 @@ public class Course extends Model{
         }
         return questions;
     }
+    public static List<Course> NotInCycle(int cycle_id){
+        SqlQuery query = Ebean.createSqlQuery("select c.id cid from course c where c.id not in "+
+            "(select course_id from cycle_x_course cc where cc.cycle_id=:id )")
+                .setParameter("id",cycle_id);
+
+        List<SqlRow> rows = query.findList();
+        List<Course> courses=new ArrayList<>();
+        for(SqlRow row : rows){
+            courses.add(Course.find.byId(row.getInteger("cid")));
+        }
+        return courses;
+    }
 }
