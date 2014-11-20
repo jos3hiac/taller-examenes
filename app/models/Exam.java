@@ -1,6 +1,7 @@
 package models;
 
-import play.data.format.Formats;
+import com.avaje.ebean.*;
+import controllers.Application;
 import play.db.ebean.Model;
 
 import javax.persistence.*;
@@ -30,6 +31,31 @@ public class Exam extends Model{
         exam.save();
         return exam;
     }
+    public void update(String date){
+        if(Application.getDate(date)!=null)this.date=Application.getDate(date);
+        update();
+    }
+    public Map getMap(){
+        Map<String,String> map=new HashMap<>();
+        map.put("id",id+"");
+        map.put("date",Application.getDateTime(date));
+        return map;
+    }
+    public void addTheme(int theme_id){
+        Theme theme=Theme.find.byId(theme_id);
+        addTheme(theme);
+    }
+    public void addTheme(Theme theme){
+        themes.add(theme);
+        update();
+    }
+    public void removeTheme(int theme_id){
+        Theme theme=Theme.find.byId(theme_id);
+        removeTheme(theme);
+    }
+    public void removeTheme(Theme theme){
+        themes.remove(theme);
+        update();
+    }
     public static Finder<Integer,Exam> find = new Finder<>(Integer.class,Exam.class);
-
 }

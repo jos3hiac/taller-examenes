@@ -68,4 +68,15 @@ public class Cycle extends Model{
         update();
     }
     public static Model.Finder<Integer,Cycle> find = new Finder<>(Integer.class,Cycle.class);
+    public List<Asignature> asignatures(){
+        SqlQuery query = Ebean.createSqlQuery("select a.professor_id pid,a.course_id cid,a.section_id sid from cycle cy join section s on (cy.id=:id and cy.id=s.cycle_id)" +
+                "join asignature a on (s.id=a.section_id)")
+                .setParameter("id",id);
+        List<SqlRow> rows = query.findList();
+        List<Asignature> asignatures=new ArrayList<>();
+        for(SqlRow row : rows){
+            asignatures.add(Asignature.findById(row.getInteger("pid"),row.getInteger("cid"),row.getInteger("sid")));
+        }
+        return asignatures;
+    }
 }

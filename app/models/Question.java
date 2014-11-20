@@ -33,6 +33,14 @@ public class Question extends Model{
         question.save();
         return question;
     }
+    public Map getMap(){
+        Map<String,String> map=new HashMap<>();
+        map.put("id",id+"");
+        if(value!=null)map.put("value",value);
+        if(image!=null)map.put("image",image);
+        if(image!=null)map.put("imagepath",getImagePath());
+        return map;
+    }
     public void updateChoice(int choice_id){
         choice=Choice.find.byId(choice_id);
         update();

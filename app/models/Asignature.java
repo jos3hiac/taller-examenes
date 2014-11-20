@@ -1,5 +1,6 @@
 package models;
 
+import com.avaje.ebean.*;
 import play.db.ebean.Model;
 
 import javax.persistence.*;
@@ -9,20 +10,18 @@ import java.util.*;
 public class Asignature extends Model {
     @EmbeddedId
     public AsignaturePK id;
-    @MapsId("professor_id")
     @ManyToOne
-    @JoinColumn(name="professor_id")
+    @JoinColumn(name="professor_id",insertable=false,updatable=false)
     public Professor professor;
-    @MapsId("course_id")
     @ManyToOne
-    @JoinColumn(name="course_id")
+    @JoinColumn(name="course_id",insertable=false,updatable=false)
     public Course course;
-    @MapsId("section_id")
     @ManyToOne
-    @JoinColumn(name="section_id")
+    @JoinColumn(name="section_id",insertable=false,updatable=false)
     public Section section;
 
     public Asignature(int professor_id,int course_id,int section_id){
+        id=new AsignaturePK(professor_id,course_id,section_id);
         professor=Professor.find.byId(professor_id);
         course=Course.find.byId(course_id);
         section=Section.find.byId(section_id);
@@ -31,6 +30,13 @@ public class Asignature extends Model {
         Asignature asignature = new Asignature(professor_id,course_id,section_id);
         asignature.save();
         return asignature;
+    }
+    public Map getMap(){
+        Map<String,Map<String,String>> map=new HashMap<>();
+        map.put("professor",professor.getMap());
+        map.put("course",course.getMap());
+        map.put("section",section.getMap());
+        return map;
     }
     @Embeddable
     public static class AsignaturePK{

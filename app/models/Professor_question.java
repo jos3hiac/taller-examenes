@@ -5,7 +5,9 @@ import play.db.ebean.Model;
 import javax.persistence.*;
 
 @Entity
+@Table(name="professor_question")
 public class Professor_question extends Model{
+    //@GeneratedValue(strategy=GenerationType.AUTO)
     @Id
     public int id;
     @ManyToOne

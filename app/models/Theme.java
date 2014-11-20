@@ -1,5 +1,6 @@
 package models;
 
+import com.avaje.ebean.*;
 import play.db.ebean.Model;
 
 import javax.persistence.*;
@@ -39,4 +40,17 @@ public class Theme extends Model{
         update();
     }
     public static Finder<Integer,Theme> find = new Finder<>(Integer.class,Theme.class);
+
+    public static List<Theme> NotInExam(int exam_id,int course_id){
+        SqlQuery query = Ebean.createSqlQuery("select t.id tid from theme t where t.course_id=:cid and t.id not in " +
+                "(select theme_id from exam_x_theme et where et.exam_id=:eid )")
+                .setParameter("cid",course_id).setParameter("eid",exam_id);
+
+        List<SqlRow> rows = query.findList();
+        List<Theme> themes=new ArrayList<>();
+        for(SqlRow row : rows){
+            themes.add(Theme.find.byId(row.getInteger("tid")));
+        }
+        return themes;
+    }
 }

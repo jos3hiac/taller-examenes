@@ -3,321 +3,378 @@
 @template(professor){
     <link rel="stylesheet" media="screen" href="assets/css/jquery.Jcrop.css">
     <script src="assets/js/jquery.Jcrop.min.js" type="text/javascript"></script>
-    <div class="row">
-        <style>
-            .qBorder{border-bottom: 1px solid #CDDBF9;padding: 3px;background-color: #F2F4FA}
-            .qBorder:hover{background-color: #E7EFFB;cursor: pointer}
-            .qCursor{border: 1px solid #B8B8B8}
-            .qCursor:hover{border: 1px solid #89AECE}
-            .qText{text-align:center;vertical-align:middle;font-weight:bold;display:table-cell}
-            #questions{height: 250px;padding-left:5px;padding-right: 10px}
-            .qLoading{position:absolute;width: 100%;height: 100%;background-color:#fff}
-        </style>
-        <div class="col-md-4">
-            <input id="in" type="button" class="btn btn-primary btn-sm" value="+">
-            <input id="out" type="button" class="btn btn-primary btn-sm" value="-">
-            <div class="well" style="width: 200px;margin-top: 10px;padding: 10px">
-                <div id="draganddrop" style="border: 2px dashed #92AAB0;height: 100px;color: #92AAB0;text-align: center;
-                vertical-align: middle;font-size: 140%;display: table-cell;">Arrastrar y soltar imagen</div>
-                <img id="imagen">
-            </div>
-        </div>
-        <div class="col-md-4" style="height: 100%">
+    <div id="div_pregunta" class="col-md-10">
+        <div class="row">
             <style>
-            h4{display: inline;}
-            input{margin: 5px}
+                .qBorder{border-bottom: 1px solid #CDDBF9;padding: 3px;background-color: #F2F4FA}
+                .qBorder:hover{background-color: #E7EFFB;cursor: pointer}
+                .qCursor{border: 1px solid #B8B8B8}
+                .qCursor:hover{border: 1px solid #89AECE}
+                .qText{text-align:center;vertical-align:middle;font-weight:bold;display:table-cell}
+                #questions{height: 250px;padding-left:5px;padding-right: 10px}
+                .qLoading{position:absolute;width: 100%;height: 100%;background-color:#fff}
             </style>
-            <div>
-                <h4>Pregunta</h4>
-                <input id="btn_pegar" type="button" class="btn btn-primary btn-sm" value="pegar">
-                <input id="btn_guardar" type="button" class="btn btn-primary btn-sm" value="guardar" disabled>
-            </div>
-
-            <div id="pregunta" style="margin-top: 10px;margin-bottom: 10px;">
-                <div style="position: absolute;overflow: hidden">
+            <div class="col-md-4">
+                <input id="in" type="button" class="btn btn-primary btn-sm" value="+">
+                <input id="out" type="button" class="btn btn-primary btn-sm" value="-">
+                <div class="well" style="width: 200px;margin-top: 10px;padding: 10px">
+                    <div id="draganddrop" style="border: 2px dashed #92AAB0;height: 100px;color: #92AAB0;text-align: center;
+                    vertical-align: middle;font-size: 140%;display: table-cell;">Arrastrar y soltar imagen</div>
+                    <img id="imagen">
                 </div>
             </div>
-            <div>
-                <h4>Alternativas</h4>
-                <select id="select_alt"></select>
+            <div class="col-md-6" style="height: 100%">
+                <style>
+                h4{display: inline}
+                input.btn{margin: 3px}
+                </style>
+                <div id="div_preg">
+                    <h4>Pregunta</h4>
+                    <input type="button" class="btn btn-primary btn-sm" value="imagen">
+                    <input type="button" class="btn btn-primary btn-sm" value="escrito">
+                    <input id="btn_guardar" type="button" class="btn btn-primary btn-sm" value="guardar">
+                    <div id="imagen" class="hidden" style="margin-left: 30px">
+                        <input id="btn_pegar" type="button" class="btn btn-primary btn-sm" value="pegar">
+                        <div id="pregunta" style="margin-top: 10px;margin-bottom: 10px;">
+                            <div style="position: absolute;overflow: hidden">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="escrito" class="hidden" style="margin-left: 30px;margin-top: 5px">
+                        <textarea rows="5" cols="25"></textarea>
+                    </div>
+                    <h4>Alternativas</h4>
+                    <select id="select_alt"></select>
+                </div>
+                <ul id="ul_alt" style="list-style: none"></ul>
             </div>
-            <ul id="ul_alt" style="list-style: none"></ul>
+            <script>
+                var order= 1,load=true;
+                //$("#tree>a.list-group-item:nth-child(1)").click()
+                $("#nueva_pregunta").click(function(e){
+                    var target = e.target;
+                    if($(target).is("a") && $(target).hasClass("list-group-item")){
+                        var id=$("#nueva_pregunta a.active").length!=0 ? $("#nueva_pregunta a.active").attr("data-id"):0
+                        $("#tree a.active").removeClass("active")
+                        $(target).addClass("active")
+                        var ord=parseInt($(target).parent().data("ord"))
+                        if($(target).next("div").length==0 ||$(target).next("div").is(':visible')){
+                            order=ord
+                            if($("#questions").is(':visible')){
+                                /*$("#questions").next().css({height:Math.min($("#questions").height(),$("#questions >div").height()),display:"block"} )
+                                .append('<div class="qLoading qText" style="color: #000">Loading...</div>')*/
+                                cargar_preguntas(target)
+                            }
+                            else load=true
+                        }
+                    }
+                })
+                function cargar_preguntas(target){
+                    $.ajax({
+                        type : "POST",
+                        url : "profesor/listquestion",
+                        async : false,
+                        data : {"order":order,"id":$(target).attr("data-id")},
+                        success:function(questions){
+                            $("#questions").text("")
+                            var div=document.createElement("div")
+                            $("#questions").append(div)
+                            for(var i in questions){
+                                var text=""
+                                if(questions[i].image)text='<img src="'+questions[i].imagepath+'" data-id="'+questions[i].id+'" data-image="'+questions[i].image+'">'
+                                else if(questions[i].value)text='<div style="width:150px;color:#A8A8A8">'+questions[i].value+'</div>'
+                                $(div).append('<div class="qBorder"><div class="qCursor">'+text+'</div></div>')
+                            }
+                            $(div).find("img").each(function(){
+                                vista_pregunta(this)
+                            })
+                            if(questions.length==0)$(div).append('<div class="qBorder qText"><h3 style="color:#A8A8A8">No se encontraron preguntas</h3></div>')
+                            if($(div).height()>$("#questions").height()){
+                                $("#questions").css({"border":" 1px solid #2a6496","overflow-y":"scroll"})
+                                $(div).css({border:""})
+                            }
+                            else{
+                                $(div).css({"border":" 1px solid #2a6496"})
+                                $("#questions").css({"border":"","overflow-y":""})
+                            }
+                            //setTimeout(function(){$("#questions").next( ).fadeOut(200,function(){$("#questions").next( ).text("")})},300)
+                        }
+                    })
+                }
+                function vista_pregunta(img){
+                    var image=$(img).data("image").split(",")
+                    var width=150//,height=80
+                    var factorX=width/image[3]//,factorY=height/image[4];
+                    var parent=$ ( img ).parent ( )
+                    console.log($(img).data("image"))
+                    $(img).load(function() {
+                        $ ( img ).width ( Math.round($ ( img ).width ( ) * factorX) ).height ( Math.round($ ( img ).height ( ) * factorX) )
+                        $ ( img ).css ( { left : Math.round(image[ 1 ] * factorX), top : Math.round(image[ 2 ] * factorX) } )
+                        $ ( parent ).css ( { position : "absolute", overflow : "hidden" } )
+                        console.log(factorX+" "+$(img).width()+" "+$(img).height())
+                    })
+                    $(img ).error(function(){
+                        $ ( img ).width ( width ).height ( Math.round(image[ 4 ] * factorX) ) ;//$ ( parent ).removeClass ( "qCursor" )
+                        $ ( parent ).addClass("qText").css ( {"background-color" : "#E8E8E8", color : "#A8A8A8" } ).text (  width + "x" + Math.round(image[ 4 ] * factorX) )
+                    })
+                    $ ( parent ).width ( width ).height ( Math.round(image[ 4 ] * factorX) )
+                    $ ( parent ).parent ( ).height ( Math.round(image[ 4 ] * factorX) )
+                }
+                $("#preguntas_rel a" ).click(function(){
+                    $("#questions").toggle()
+                    if(load && $("#nueva_pregunta a:first").length){
+                        /*$("#questions").next().css({display:"block"} )
+                        .append('<div class="qLoading qText" style="color: #000">Loading...</div>')*/
+                        cargar_preguntas($("#nueva_pregunta a:first"))
+                        load=false
+                    }
+                })
+            </script>
         </div>
         <script>
-            var order= 1,load=true;
-            $("#tree").click(function(e){
-                var target = e.target;
-                if($(target).is("a") && $(target).hasClass("list-group-item")){
-                    var id=$("#tree a.active").length!=0 ? $("#tree a.active").attr("data-id"):0
-                    $("#tree a.active").removeClass("active")
-                    $(target).addClass("active")
-                    var ord=parseInt($(target).parent().data("ord"))
-                    $("#btn_guardar").attr("disabled","")
-                    if(ord==4){
-                        var children=$("#ul_alt").children().length
-                        if($("#pregunta img[src]").length!=0 && $("#ul_alt img[src]").length==children && children>0
-                            && $("#ul_alt input:radio[name=clave]:checked").length!=0) {
-                            $ ("#btn_guardar").removeAttr("disabled");
-                        }
-                    }
-                    if($(target).next("div").length==0 ||$(target).next("div").is(':visible')){
-                        order=ord
-                        if($("#questions").is(':visible')){
-                            /*$("#questions").next().css({height:Math.min($("#questions").height(),$("#questions >div").height()),display:"block"} )
-                            .append('<div class="qLoading qText" style="color: #000">Loading...</div>')*/
-                            $("#questions").load("profesor/listquestion",{"order":order,"id":$(target).attr("data-id")})
-                        }
-                        else load=true
-                    }
-                }
-            })
-            $("#questions").on("DOMNodeInserted",">div",function(e){
-                if(e.target==$(this)[0]){
-                    $(this).find("img").each(function(){
-                        vista_pregunta(this)
-                    })
-                    if($(this).children().length==0){
-                        $(this).append('<div class="qBorder qText"><h3 style="color:#A8A8A8">No se encontraron preguntas</h3></div>')
-                    }
-                    if($(this).height()>$("#questions").height()){
-                        $("#questions").css({"border":" 1px solid #2a6496","overflow-y":"scroll"})
-                        $(this).css({border:""})
-                    }
-                    else{
-                        $(this).css({"border":" 1px solid #2a6496"})
-                        $("#questions").css({"border":"","overflow-y":""})
-                    }
-                    //setTimeout(function(){$("#questions").next( ).fadeOut(200,function(){$("#questions").next( ).text("")})},300)
-                }
-            })
-            function vista_pregunta(img){
-                var image=$(img).data("image").split(",")
-                var width=150//,height=80
-                var factorX=width/image[3]//,factorY=height/image[4];
-                var parent=$ ( img ).parent ( )
-                $(img).load(function() {
-                    $ ( img ).width ( Math.round($ ( img ).width ( ) * factorX) ).height ( Math.round($ ( img ).height ( ) * factorX) )
-                    $ ( img ).css ( { left : Math.round(image[ 1 ] * factorX), top : Math.round(image[ 2 ] * factorX) } )
-                    $ ( parent ).css ( { position : "absolute", overflow : "hidden" } )
-
-                })
-                $(img ).error(function(){
-                    $ ( img ).width ( width ).height ( Math.round(image[ 4 ] * factorX) ) ;//$ ( parent ).removeClass ( "qCursor" )
-                    $ ( parent ).addClass("qText").css ( {"background-color" : "#E8E8E8", color : "#A8A8A8" } ).text (  width + "x" + Math.round(image[ 4 ] * factorX) )
-                })
-                $ ( parent ).width ( width ).height ( Math.round(image[ 4 ] * factorX) )
-                $ ( parent ).parent ( ).height ( Math.round(image[ 4 ] * factorX) )
+            var div_image_width= $("#imagen").parent( ).width()
+            var zoom,src;//,width_scale,height_scale;
+            var file;
+            var box ={}
+            function coordenadas(c){
+            box = c
             }
-            $("#preguntas_rel a" ).click(function(){
-                $("#questions").toggle()
-                if(load){
-                    /*$("#questions").next().css({display:"block"} )
-                    .append('<div class="qLoading qText" style="color: #000">Loading...</div>')*/
-                    $("#questions").load("profesor/listquestion",{"order":order,"id":$("#tree a:first").attr("data-id")})
-                    load=false
+            var jcrop_api,jcrop_img;
+            startJCrop()
+            function startJCrop(){
+                if(typeof jcrop_api !== "undefined")jcrop_api.destroy()
+                $("#imagen").Jcrop({
+                    onSelect:coordenadas
+                },function(){
+                    jcrop_api = this;
+                    //$("div.jcrop-holder").css("overflow","hidden")
+                });
+            }
+            $("#draganddrop").on("dragenter",function(e){
+                e.stopPropagation()
+                e.preventDefault()
+                $(this).css({border:"2px solid #0B85A1"})
+            })
+            $("#draganddrop").on("dragleave",function(e){
+                e.stopPropagation()
+                e.preventDefault()
+                $(this).css({border:"2px dashed #0B85A1"})
+            })
+            $("#draganddrop").on("drop",function(e){
+                e.stopPropagation()
+                e.preventDefault()
+                $(this).css({border:"2px dashed #0B85A1"})
+                //file = e.target.files[0]
+                file = e.originalEvent.dataTransfer.files[0]
+                newImage(file)
+            })
+            $(document).on('dragenter dragover drop', function (e){
+                e.stopPropagation()
+                e.preventDefault()
+            })
+            function newImage(file){
+                imageType = /image.*/;
+                if (!file.type.match(imageType))
+                    return;
+
+                var reader = new FileReader();
+                reader.onload = function(e){
+                    var parent=$("#imagen").parent();
+                    $("#imagen").remove()
+                    parent.append('<img id="imagen">')
+                    $("#imagen").attr("src",e.target.result);
+                    var img=$("#imagen")[0];
+                    ajustar_a_imagen()
+                    startJCrop()
+                    zoom=1;
+                    src=e.target.result;
+                    $("#in").click(function(){
+                        if(zoom<1.5){
+                            zoom += 0.1
+                            scale(src)
+                        }
+                    })
+                    $("#out").click(function(){
+                        if(zoom>0.6){
+                            zoom -= 0.1
+                            scale(src)
+                        }
+                    })
+                    function scale(src){
+                        var parent=$("#imagen").parent();
+                        $("#imagen").remove()
+                        parent.append('<img id="imagen">')
+                        $("#imagen").attr("src",src)
+                        width_scale=$(img).width()*zoom
+                        height_scale=$(img).height()*zoom
+                        $("#imagen").width(width_scale)
+                        $("#imagen").height(height_scale)
+                        ajustar_a_imagen()
+                        startJCrop()
+                    }
+                    function ajustar_a_imagen(){
+                        $("#imagen").closest(".well").width($("#imagen").width()+10)
+                        $("#draganddrop").css({display:"","max-width":200,"height":60,margin:"auto","margin-bottom":5})
+                        $("#imagen").closest(".col-md-4").width($("#imagen").closest(".well").width())
+                        var width=$("#imagen").closest(".col-md-4").width()
+                        $("#imagen").closest(".col-md-4").width(width>div_image_width?width:div_image_width)
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+            $("#div_preg :button[value='imagen']").click(function(){
+                    $(this).siblings("#imagen").removeClass("hidden")
+                    $(this).siblings("#escrito").addClass("hidden")
+            })
+            $("#div_preg :button[value='escrito']").click(function(){
+                $(this).siblings("#escrito").removeClass("hidden")
+                $(this).siblings("#imagen").addClass("hidden")
+            })
+            $("#btn_pegar").click(function(){
+                $("#pregunta img").remove()
+                $("#pregunta div").append('<img>')
+                $("#pregunta,#pregunta div").css({width:box.w/zoom,height:box.h/zoom})
+                var img=$("#pregunta img")[0]
+                $(img).attr("src",src)
+                $(img).data("file",file)
+                $(img).css({position:"absolute",left:-box.x/zoom,top:-box.y/zoom})
+            })
+            $("#select_alt").append("<option value=''>"+"seleccione"+"</option>")
+            for(var i=1;i<8;i++){
+            $("#select_alt").append("<option value='"+(i+1)+"'>"+(i+1)+"</option>")
+            }
+            $("#select_alt").change(function(){
+                var num=$(this).val()
+                var ord=["A","B","C","D","E","F","G","H"]
+                $("#ul_alt").html("")
+                for(var i=0;i<num;i++){
+                    $("#ul_alt").append('<li>'+
+                        '<input type="radio" name="clave" value="'+ord[i]+'">'+
+                        '<input type="button" class="btn btn-primary btn-xs" value="imagen">'+
+                        '<input type="button" class="btn btn-primary btn-xs" value="escrito">'+
+                        '<div id="imagen" class="hidden" style="margin-left: 20px">'+
+                            '<input type="button" class="btn btn-primary btn-xs" value="pegar">'+
+                            '<div style="margin-top: 5px;margin-bottom: 5px">'+
+                                '<div style="position: absolute;overflow: hidden">'+
+                                '</div>'+
+                            '</div>'+
+                        '</div>'+
+                        '<div id="escrito" class="hidden" style="margin-left: 20px;margin-top: 5px"><textarea rows="4" cols="20"></textarea></div>'+
+                    '</li>')
+                }
+                $("#ul_alt :button[value='imagen']").click(function(){
+                    $(this).siblings("#imagen").removeClass("hidden")
+                    $(this).siblings("#escrito").addClass("hidden")
+                })
+                $("#ul_alt :button[value='escrito']").click(function(){
+                    $(this).siblings("#escrito").removeClass("hidden")
+                    $(this).siblings("#imagen").addClass("hidden")
+                })
+                $("#ul_alt :button[value='pegar']").click(function(){
+                    var div=$(this).next("div").find("div")
+                    $(div).find("img").remove()
+                    $(div).append('<img>')
+                    $(div).css({width:Math.round(box.w/zoom),height:Math.round(box.h/zoom)})
+                    $(div).parent().css({width:Math.round(box.w/zoom),height:Math.round(box.h/zoom)})
+                    var img=$(div).find("img")[0]
+                    $(img).attr("src",src)
+                    $(img).data("file",file)
+                    $(img).css({position:"absolute",left:-Math.round(box.x/zoom),top:-Math.round(box.y/zoom)})
+                })
+            })
+            function ImgRect(img){
+                return {left:$(img).css("left"),top:$(img).css("top"),width:$(img).parent().css("width"),height:$(img).parent().css("height")}
+            }
+            function StringImgRect(img){
+                var rect=ImgRect(img)
+                return value(rect.left)+","+value(rect.top)+","+value(rect.width)+","+value(rect.height)
+            }
+            function value(css){
+                return css.split("px")[0]
+            }
+            function FileName(file){
+                if('name' in file)return file.name
+                else return ""
+            }
+            $("#btn_guardar").click(function(){
+                var error=""
+                if(!$("#nueva_pregunta a.active").length || parseInt($("#nueva_pregunta a.active").parent().data("ord"))!=4)error="No ha elegido un tema"
+                else if($("#ul_alt").children().length==0)error="La pregunta debe tener alternativas"
+                else if($("#ul_alt input:radio[name=clave]:checked").length==0)error="No ha seleccionado la alternativa correcta"
+                if(error!=""){
+                    $("#btn_guardar" ).next("div.alert").remove()
+                    $("#btn_guardar").after('<div class="alert alert-danger">'+error+'</div>')
+                    return false
+                }
+                var img=$("#pregunta img")
+                var examen_id=$("#nueva_pregunta a.active").parent().parent().prev("a").attr("data-id")
+                var theme_id=$("#nueva_pregunta a.active").attr("data-id")
+                var question_id= 0,choice_id= 0,professorquestion_id=0;
+                var data={}
+                if($("#div_preg").find("#imagen").hasClass("hidden")){
+                    data={value:$("#div_preg").find("#escrito textarea").val(),theme_id:theme_id}
+                }
+                else{
+                    data={dataurl:$(img).attr("src"),name:FileName($(img).data("file")),rect:StringImgRect($(img)),theme_id:theme_id}
+                }
+                $.ajax({
+                    type: "POST",
+                    url:"profesor/savequestion",
+                    async: false,
+                    data: data,
+                    success: function(id){
+                        question_id=parseInt(id)
+                            $ ( "#ul_alt li" ).each ( function ( ) {
+                            var img = $ ( this ).find ( "img" )
+                            var radio = $(this).find("input:radio[name=clave]:checked")[0]
+                            var data={}
+                            if($(this).find("#imagen").hasClass("hidden")){
+                                data={value:$(this).find("#escrito textarea").val(),question_id:question_id}
+                            }
+                            else{
+                                data={dataurl:$(img).attr("src"),name:FileName($(img).data("file")),rect:StringImgRect($(img)),question_id:question_id}
+                            }
+                            $.ajax ( {
+                                type : "POST",
+                                url : "profesor/savechoice",
+                                async: false,
+                                data : data,
+                                success : function ( id ) {
+                                    if($ (radio).length!=0){
+                                        choice_id=parseInt(id);
+                                        $.ajax({
+                                            type: "POST",
+                                            url:"profesor/updatechoiceidquestion",
+                                            async: false,
+                                            data: {question_id:question_id,choice_id:choice_id},
+                                            success: function(){
+                                                $.ajax ( {
+                                                    type : "POST",
+                                                    url : "profesor/saveprofessorquestion",
+                                                    async: false,
+                                                    data : { examen_id:examen_id , question_id : question_id},
+                                                    success : function ( id ) {
+                                                        professorquestion_id=parseInt(id)
+                                                        $("#btn_guardar").parent( ).find("div.alert").remove()
+                                                        $("#btn_guardar").parent( ).append('<div class="alert alert-success">' +
+                                                        'La pregunta y alternativas se guardaron correctamente</div>')
+                                                        }
+                                                } )
+                                            }
+                                        })
+                                    }
+
+                                }
+                            } )
+                        } )
+                    }
+                })
+                if(question_id==0 || choice_id==0 || professorquestion_id==0){
+                    $("#btn_guardar").parent( ).find("div.alert").remove()
+                    $("#btn_guardar").parent( ).append('<div class="alert alert-danger">' +
+                    'Error al guardar la pregunta</div>')
                 }
             })
         </script>
     </div>
-    <script>
-        var div_image_width= $("#imagen").parent( ).width()
-        var zoom,src;//,width_scale,height_scale;
-        var file;
-        var box ={}
-        function coordenadas(c){
-        box = c
-        }
-        var jcrop_api,jcrop_img;
-        startJCrop()
-        function startJCrop(){
-            if(typeof jcrop_api !== "undefined")jcrop_api.destroy()
-            $("#imagen").Jcrop({
-                onSelect:coordenadas
-            },function(){
-                jcrop_api = this;
-                //$("div.jcrop-holder").css("overflow","hidden")
-            });
-        }
-        $("#draganddrop").on("dragenter",function(e){
-            e.stopPropagation()
-            e.preventDefault()
-            $(this).css({border:"2px solid #0B85A1"})
-        })
-        $("#draganddrop").on("dragleave",function(e){
-            e.stopPropagation()
-            e.preventDefault()
-            $(this).css({border:"2px dashed #0B85A1"})
-        })
-        $("#draganddrop").on("drop",function(e){
-            e.stopPropagation()
-            e.preventDefault()
-            $(this).css({border:"2px dashed #0B85A1"})
-            //file = e.target.files[0]
-            file = e.originalEvent.dataTransfer.files[0]
-            newImage(file)
-        })
-        $(document).on('dragenter dragover drop', function (e){
-            e.stopPropagation()
-            e.preventDefault()
-        })
-        function newImage(file){
-            imageType = /image.*/;
-            if (!file.type.match(imageType))
-                return;
-
-            var reader = new FileReader();
-            reader.onload = function(e){
-                var parent=$("#imagen").parent();
-                $("#imagen").remove()
-                parent.append('<img id="imagen">')
-                $("#imagen").attr("src",e.target.result);
-                var img=$("#imagen")[0];
-                ajustar_a_imagen()
-                startJCrop()
-                zoom=1;
-                src=e.target.result;
-                $("#in").click(function(){
-                    if(zoom<1.5){
-                        zoom += 0.1
-                        scale(src)
-                    }
-                })
-                $("#out").click(function(){
-                    if(zoom>0.6){
-                        zoom -= 0.1
-                        scale(src)
-                    }
-                })
-                function scale(src){
-                    var parent=$("#imagen").parent();
-                    $("#imagen").remove()
-                    parent.append('<img id="imagen">')
-                    $("#imagen").attr("src",src)
-                    width_scale=$(img).width()*zoom
-                    height_scale=$(img).height()*zoom
-                    $("#imagen").width(width_scale)
-                    $("#imagen").height(height_scale)
-                    ajustar_a_imagen()
-                    startJCrop()
-                }
-                function ajustar_a_imagen(){
-                    $("#imagen").closest(".well").width($("#imagen").width()+10)
-                    $("#draganddrop").css({display:"","max-width":200,"height":60,margin:"auto","margin-bottom":5})
-                    $("#imagen").closest(".col-md-4").width($("#imagen").closest(".well").width())
-                    var width=$("#imagen").closest(".col-md-4").width()
-                    $("#imagen").closest(".col-md-4").width(width>div_image_width?width:div_image_width)
-                }
-            }
-            reader.readAsDataURL(file);
-        }
-
-        $("#btn_pegar").click(function(){
-            $("#pregunta img").remove()
-            $("#pregunta div").append('<img>')
-            $("#pregunta,#pregunta div").css({width:box.w/zoom,height:box.h/zoom})
-            var img=$("#pregunta img")[0]
-            $(img).attr("src",src)
-            $(img).data("file",file)
-            $(img).css({position:"absolute",left:-box.x/zoom,top:-box.y/zoom})
-        })
-        $("#select_alt").append("<option value=''>"+"seleccione"+"</option>")
-        for(var i=1;i<8;i++){
-        $("#select_alt").append("<option value='"+(i+1)+"'>"+(i+1)+"</option>")
-        }
-        $("#select_alt").change(function(){
-            var num=$(this).val()
-            var ord=["A","B","C","D","E","F","G","H"]
-            $("#ul_alt").html("")
-            for(var i=0;i<num;i++){
-                $("#ul_alt").append('<li><input type="radio" name="clave" value="'+ord[i]+'">'+'<input type="button" class="btn btn-primary btn-xs" value="pegar">' +
-                '<div style="margin-top: 5px;margin-bottom: 5px"><div style="position: absolute;overflow: hidden"></div></div></li>')
-            }
-            $("#ul_alt :button").click(function(){
-                var div=$(this).siblings("div:first").find("div")
-                $(div).find("img").remove()
-                $(div).append('<img>')
-                $(div).css({width:Math.round(box.w/zoom),height:Math.round(box.h/zoom)})
-                $(div).parent().css({width:Math.round(box.w/zoom),height:Math.round(box.h/zoom)})
-                var img=$(div).find("img")[0]
-                $(img).attr("src",src)
-                $(img).data("file",file)
-                $(img).css({position:"absolute",left:-Math.round(box.x/zoom),top:-Math.round(box.y/zoom)})
-            })
-        })
-        function ImgRect(img){
-            return {left:$(img).css("left"),top:$(img).css("top"),width:$(img).parent().css("width"),height:$(img).parent().css("height")}
-        }
-        function StringImgRect(img){
-            var rect=ImgRect(img)
-            return value(rect.left)+","+value(rect.top)+","+value(rect.width)+","+value(rect.height)
-        }
-        function value(css){
-            return css.split("px")[0]
-        }
-        function FileName(file){
-            if('name' in file)return file.name
-            else return ""
-        }
-        $("#btn_guardar").click(function(){
-            var img=$("#pregunta img")
-            var examenid=$("#tree a.active").parent().parent().prev("a").attr("data-id")
-            var themeid=$("#tree a.active").attr("data-id")
-            var questionid= 0,choiceid= 0,professorquestionid=0;
-            $.ajax({
-                type: "POST",
-                url:"profesor/savequestion",
-                async: false,
-                data: {dataurl:$(img).attr("src"),name:FileName($(img).data("file")),
-                rect:StringImgRect($(img)),themeid:themeid},
-                success: function(id){
-                    questionid=parseInt(id)
-                }
-            })
-            if(questionid!=0) {
-                $ ( "#ul_alt li" ).each ( function ( ) {
-                    var img = $ ( this ).find ( "img" )
-                    var radio = $(this).find("input:radio[name=clave]:checked")[0]
-                    $.ajax ( {
-                        type : "POST",
-                        url : "profesor/savechoice",
-                        async: false,
-                        data : { dataurl : $ ( img ).attr ( "src" ), name : FileName ( $ ( img ).data ( "file" ) ),
-                        rect : StringImgRect ( $ ( img ) ), questionid : questionid },
-                        success : function ( id ) {
-                            if($ (radio).length!=0)choiceid=parseInt(id);
-                        }
-                    } )
-                } )
-                $.ajax ( {
-                    type : "POST",
-                    url : "profesor/saveprofessorquestion",
-                    async: false,
-                    data : { examenid:examenid , questionid : questionid},
-                    success : function ( id ) {
-                        professorquestionid=parseInt(id)
-                    }
-                } )
-            }
-            if(choiceid!=0){
-                $.ajax({
-                    type: "POST",
-                    url:"profesor/updatechoiceidquestion",
-                    async: false,
-                    data: {questionid:questionid,choiceid:choiceid},
-                    success: function(msg){
-                        if(msg=="success"){
-                            $("#btn_guardar").parent( ).find("div.alert").remove()
-                            $("#btn_guardar").parent( ).append('<div class="alert alert-success">' +
-                            'La pregunta y alternativas se guardaron correctamente</div>')
-                        }
-                    }
-                })
-            }
-            if(questionid==0 || choiceid==0 || professorquestionid==0){
-                $("#btn_guardar").parent( ).find("div.alert").remove()
-                $("#btn_guardar").parent( ).append('<div class="alert alert-danger">' +
-                'Error al guardar la pregunta</div>')
-            }
-        })
-    </script>
 }

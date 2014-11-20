@@ -6,6 +6,7 @@
             <h3 style="display: inline-block">Cursos</h3>
             <div id="add_curso">
                 <form class="form-horizontal">
+                    <b>Nuevo</b>
                     <input type="text" id="add_curso_name" name="name" placeholder="Nombre..." style="width: 130px">
                     <input type="button" id="add_curso_plus" class="btn btn-sm btn-primary" value="+">
                     <input type="button" id="curso_addl" class="btn btn-sm btn-primary" value="+ lista">
@@ -79,11 +80,22 @@
             if(edit)$(this).attr("contenteditable",edit)
             else $(this).removeAttr("contenteditable")
         }
-        $.fn.add_tr_model=function(model,attrs,btns){
+        $.fn.ajax_model=function(url,data,success){
+            $.ajax({
+                type : "POST",
+                url : url,
+                async : false,
+                data : data,
+                success:function(modelArray){
+                    success(modelArray)
+                }
+            })
+        }
+        $.fn.add_row=function(id,values,btns){
             if($(this).is("tbody")){
-                var tr='<tr data-id="'+model.id+'">'
-                for(var i in attrs){
-                    tr+='<td>'+model[attrs[i]]+'</td>'
+                var tr='<tr data-id="'+id+'">'
+                for(var i in values){
+                    tr+='<td>'+values[i]+'</td>'
                 }
                 tr+='<td>'
                 for(var i in btns){
@@ -104,11 +116,20 @@
                 //if($(this).parent().data("datatable")!==undefined)$(this).parent().data("datatable").DataTable().row.add($(tr)).draw()
             }
         }
-        $.fn.add_model=function(modelArray,attrs,btns){
-            if($(this).is("tbody")) {
-                for ( var i in modelArray ) {
-                    $(this).add_tr_model(modelArray[i],attrs,btns!==undefined?btns:["Editar","Eliminar"])
+        $.fn.add_rows_model=function(modelArray,func,btns){
+            if($(this).is("tbody")){
+                for(var i in modelArray){
+                    var obj=func(modelArray[i])
+                    $(this).add_row(obj.id,obj.values,btns!==undefined?btns:["Editar","Eliminar"])
                 }
+            }
+        }
+        $.fn.add_rows_ajax=function(url,data,func,btns){
+            if($(this).is("tbody")){
+                var table=this
+                $(table).ajax_model(url,data,function(modelArray){
+                    $(table).add_rows_model($.isArray(modelArray)?modelArray:[modelArray],func,btns)
+                })
             }
         }
         $.fn.add_datatable=function(options){
@@ -124,22 +145,23 @@
                 $(this).removeData("datatable")
             }
         }
-        $.fn.update_datatable=function(url,data,attrs,btns){
+        $.fn.ajax_datatable=function(url,data,type,func,btns){
             if($(this).is("table")){
                 var table=this
-                $.ajax ( {
-                    type : "POST",
-                    url : url,
-                    async : false,
-                    data : data,
-                    success : function (modelArray) {
-                        if($(table).data("datatable") !== undefined)$(table).remove_datatable()
-                        if($(table).parent().hasClass("hidden"))$(table).parent().removeClass("hidden")
-                        $(table).find("tbody").text("")
-                        $(table).find("tbody").add_model(modelArray,attrs,btns)
-                        $(table).add_datatable()
-                    }
-                } )
+                if($(table).data("datatable") !== undefined)$(table).remove_datatable()
+                if(type=="update"){
+                    $(table).find("tbody").text("")
+                }
+                $(table).find("tbody").add_rows_ajax(url,data,func,btns)
+                $(table).add_datatable()
+            }
+        }
+        $.fn.ajax_form_datatable=function(form,dialog,url,data,type,func,btns){
+            if($(this).is("table")){
+                if($(form).valid()){
+                    if(dialog)$(form).parent().dialog('close')
+                    $(this).ajax_datatable(url,data,type,func,btns)
+                }
             }
         }
         $.fn.cleanForm=function(){
@@ -149,16 +171,16 @@
                 $(this).removeData('validator')
             }
         }
-        $.fn.myValidate=function(update,rules,errorCss,errorPlace){
+        $.fn.myValidate=function(update,rules,func){
             if($(this).is("form")){
                 if(update)$(this).cleanForm()
                 $(this ).validate ( {
                     rules : rules,
                     errorElement:'div',
                     errorPlacement : function ( error, element ) {
-                        $ ( error ).addClass ('alert alert-danger').css(errorCss || {})
-                        if(errorPlace === undefined)$(element).parent().append(error)
-                        else if(errorPlace == "after")$(element).after(error)
+                        $ (error).addClass ('alert alert-danger')
+                        if(func!==undefined)func(element,error)
+                        else $(element).parent().append(error)
                     }
                 } )
             }
@@ -175,115 +197,95 @@
                 })
             }
         }
-        $.fn.acciones=function(modelName,attrs){
-            if($(this).is("tbody")){
-                var table=$(this).parent()
-                $(this).on( 'click', 'button', function (e) {
-                    var tr=$(this).parent().parent()
-                    var hidden=$(this).parent().find(".hidden")
-                    var visible=$(this).parent().find(":not('.hidden')")
-                    e.stopPropagation()
-                    if($(this).text()=='Editar'){
-                        $(tr).editable(true)
-                        $(hidden).removeClass("hidden")
-                        $(visible).addClass("hidden")
-                    }
-                    if($(this).text()=='Guardar'){
-                        var data={model:modelName,id:$(tr).attr("data-id")}
+        $.fn.accion_edit=function(){
+            var tr=$(this).parent().parent()
+            var hidden=$(this).parent().find(".hidden")
+            var visible=$(this).parent().find(":not('.hidden')")
+            $(tr).editable(true)
+            $(hidden).removeClass("hidden")
+            $(visible).addClass("hidden")
+        }
+        $.fn.accion_save=function(modelName,attrs){
+            var tr=$(this).parent().parent()
+            var hidden=$(this).parent().find(".hidden")
+            var visible=$(this).parent().find(":not('.hidden')")
+            var data={model:modelName,id:$(tr).attr("data-id")}
+            for(var i in attrs){
+                data[attrs[i]]=$(tr).find("td:nth-child("+(parseInt(i)+1)+")").text()
+            }
+            $(this).ajax_model("administrador/updatemodel",data,function(model){
+                    $(tr).editable(false)
+                    if(model!=null){
                         for(var i in attrs){
-                            data[attrs[i]]=$(tr).find("td:nth-child("+(parseInt(i)+1)+")").text()
+                            $(tr).find("td:nth-child("+(parseInt(i)+1)+")").text(model[attrs[i]])
                         }
-                        $.ajax ( {
-                            type : "POST",
-                            url : "administrador/updatemodel",
-                            async : false,
-                            data : data,
-                            success : function(model){
-                                $(tr).editable(false)
-                                if(model!=null){
-                                    for(var i in attrs){
-                                        $(tr).find("td:nth-child("+(parseInt(i)+1)+")").text(model[attrs[i]])
-                                    }
-                                }
-                                $(hidden).removeClass("hidden")
-                                $(visible).addClass("hidden")
-                            }
-                        })
                     }
-                    if($(this).text()=='Cancelar'){
-                        $.ajax ( {
-                            type : "POST",
-                            url : "administrador/findmodel",
-                            async : false,
-                            data : { model:modelName,id:$(tr).attr("data-id")},
-                            success : function (model) {
-                                $(tr).editable(false)
-                                for(var i in attrs){
-                                    $(tr).find("td:nth-child("+(parseInt(i)+1)+")").text(model[attrs[i]])
-                                }
-                                $(hidden).removeClass("hidden")
-                                $(visible).addClass("hidden")
-                            }
-                        })
+                    $(hidden).removeClass("hidden")
+                    $(visible).addClass("hidden")
+                })
+        }
+        $.fn.accion_cancel=function(modelName,attrs){
+            var tr=$(this).parent().parent()
+            var hidden=$(this).parent().find(".hidden")
+            var visible=$(this).parent().find(":not('.hidden')")
+            $(this).ajax_model("administrador/findmodel",{model:modelName,id:$(tr).attr("data-id")},function(model){
+                    $(tr).editable(false)
+                    for(var i in attrs){
+                        $(tr).find("td:nth-child("+(parseInt(i)+1)+")").text(model[attrs[i]])
                     }
-                    if($(this).text()=='Eliminar'){
-                        $.ajax ( {
-                            type : "POST",
-                            url : "administrador/deletemodel",
-                            async : false,
-                            data : { model:modelName,id:$(tr).attr("data-id")},
-                            success : function (){
-                                //$(tr).remove()
-                                $(table).data("datatable").DataTable().row(tr).remove().draw()
-                                if($(table).attr("id")=="cursos_tab"){
-                                    $("#themes_tab").remove_datatable()
-                                    $("#themes_tab").parent().addClass("hidden")
-                                }
-                            }
-                        })
+                    $(hidden).removeClass("hidden")
+                    $(visible).addClass("hidden")
+                })
+        }
+        $.fn.accion_delete=function(data){
+            var tr=$(this).parent().parent()
+            var table=$(tr).parent().parent()
+            $(this).ajax_model("administrador/deletemodel",data,function(){
+                    $(table).data("datatable").DataTable().row(tr).remove().draw()
+                    if($(table).attr("id")=="cursos_tab"){
+                        $("#themes_tab").remove_datatable()
+                        $("#themes_tab").parent().addClass("hidden")
+                    }
+                })
+        }
+        $.fn.acciones=function(modelName,attrs,funcs){
+            if($(this).is("tbody")){
+                $(this).on( 'click', 'button', function (e) {
+                    e.stopPropagation()
+                    var tr=$(this).parent().parent()
+                    var name=$(this).text()
+                    if(funcs !== undefined && funcs.hasOwnProperty(name))funcs[name](this)
+                    else{
+                        if(name=='Editar')$(this).accion_edit()
+                        if(name=='Guardar')$(this).accion_save(modelName,attrs)
+                        if(name=='Cancelar')$(this).accion_cancel(modelName,attrs)
+                        if(name=='Eliminar')$(this).accion_delete({model:modelName,id:$(tr).attr("data-id")})
                     }
                 })
             }
         }
-        $.fn.new_model=function(form,modelName,data,attrs,btns,dialog){
-            if($(this).is("table")){
-                var table=this
-                if(form && $(form).valid()){
-                    if(dialog)$(form).parent().dialog('close')
-                    $.ajax ( {
-                        type : "POST",
-                        url : "administrador/add"+modelName,
-                        async: false,
-                        data : data,
-                        success : function (modelArray) {
-                            $(table).remove_datatable()
-                            $(table).find("tbody").add_model($.isArray(modelArray)?modelArray:[modelArray],attrs,btns)
-                            $(table).add_datatable()
-                        }
-                    })
-                }
-            }
-        }
-
-        attrsCurso=["name"]
-        attrsTheme=["name"]
         $("#cursos_tab").add_datatable()
         $("#cursos_tab tbody").selectable()
         $("#cursos_tab tbody").on( 'click', 'tr', function () {
-            $ ("#themes_tab").update_datatable("administrador/listtheme",{course_id:$(this).attr("data-id")},attrsCurso)
+            $("#themes_tab").parent().removeClass("hidden")
+            $ ("#themes_tab").ajax_datatable("administrador/listtheme",{course_id:$(this).attr("data-id")},"update",function(theme){
+                return {id:theme.id,values:[theme.name]}
+            })
             $ ("#add_theme form").myValidate(true,{
                 name:{required:true,exist:{model:"Theme",column:"name",condition:"course_id:"+$("#cursos_tab tr.selected").attr("data-id"),
-                message : "El tema ? del curso " + $ ( "#cursos_tab tr.selected td:nth-child(1)").text() + " ya existe" } }
+                    message : "El tema ? del curso " + $ ( "#cursos_tab tr.selected td:nth-child(1)").text() + " ya existe" } }
             })
         })
-        $("#cursos_tab tbody").acciones("course",attrsCurso)
+        $("#cursos_tab tbody").acciones("course",["name"])
         $("#themes_tab tbody").selectable()
-        $("#themes_tab tbody").acciones("theme",attrsTheme)
+        $("#themes_tab tbody").acciones("theme",["name"])
         $("#add_curso form").myValidate(false,{
                 name:{required:true,exist:{model:"Course",column:"name",message:"El curso ? ya existe"}}
         })
         $("#add_curso_plus").click(function(){
-            $("#cursos_tab").new_model($("#add_curso form"),"courses",{names:$("#add_curso_name").val(),delimiter:","},attrsCurso)
+            $("#cursos_tab").ajax_form_datatable($("#add_curso form"),false,"administrador/addcourses",{names:$("#add_curso_name").val(),delimiter:","},"add",function(course){
+                return {id:course.id,values:[course.name]}
+            })
         })
         $("#addl_curso").dialog({
             autoOpen:false,
@@ -298,11 +300,15 @@
             $("#addl_curso").dialog("open")
         })
         $("#addl_curso_aceptar").click(function(){
-            $("#cursos_tab").new_model($("#addl_curso form"),"courses",{names:$("#addl_curso_names").val(),delimiter:","},attrsCurso,true)
+            $("#cursos_tab").ajax_form_datatable($("#addl_curso form"),true,"administrador/addcourses",{names:$("#addl_curso_names").val(),delimiter:","},"add",function(course){
+                return {id:course.id,values:[course.name]}
+            })
         })
         $("#add_theme_plus").click(function(){
-            $("#themes_tab").new_model($("#add_theme form"),"themes",{names:$("#add_theme_name").val(),delimiter:",",
-                course_id:$("#cursos_tab tr.selected").attr("data-id")},attrsTheme)
+            $("#themes_tab").ajax_form_datatable($("#add_theme form"),false,"administrador/addthemes",{names:$("#add_theme_name").val(),delimiter:",",
+                course_id:$("#cursos_tab tr.selected").attr("data-id")},"add",function(theme){
+                return {id:theme.id,values:[theme.name]}
+            })
         })
         $("#addl_theme").dialog({
             autoOpen:false,
@@ -313,13 +319,15 @@
         $("#theme_addl").click(function(){
             $("#addl_theme form").myValidate(true,{
                     names:{required:true,listexist:{model:"Theme",column:"name",condition:"course_id:"+$("#cursos_tab tr.selected").attr("data-id"),
-                        message:"Los temas: ? del curso "+$("#cursos_tab tr.selected td").text()+" ya existen",
+                        message:"Los temas: ? del curso "+$("#cursos_tab tr.selected td:nth-child(1)").text()+" ya existen",
                         delimiter:","}}})
             $("#addl_theme").dialog("open")
         })
         $("#addl_theme_aceptar").click(function(){
-            $("#themes_tab").new_model($("#addl_theme form"),"themes",{names:$("#addl_theme_names").val(),delimiter:",",
-                course_id:$("#cursos_tab tr.selected").attr("data-id")},attrsTheme,true)
+            $("#themes_tab").ajax_form_datatable($("#addl_theme form"),true,"administrador/addthemes",{names:$("#addl_theme_names").val(),delimiter:",",
+                course_id:$("#cursos_tab tr.selected").attr("data-id")},"add",function(theme){
+                return {id:theme.id,values:[theme.name]}
+            })
         })
     </script>
     <div id="div_ciclos" class="col-md-10 hidden">
@@ -347,84 +355,98 @@
         </div>
     </div>
     <script>
-        $.fn.update_select=function(url,data,attrName){
+        $.fn.update_select=function(url,data,func){
             var select=this
-            $.ajax ({
-                type : "POST",
-                url : url,
-                async : false,
-                data :data,
-                success : function (modelArray){
-                    console.log(modelArray)
+            $(this).ajax_model(url,data,function(modelArray){
                     $(select).text("")
                     var opts=""
+                    modelArray=$.isArray(modelArray)?modelArray:[modelArray]
                     for ( var i in modelArray){
-                        opts+='<option value="'+modelArray[i].id+'">'+modelArray[i][attrName]+'</option>'
+                        var obj=func(modelArray[i])
+                        opts+='<option value="'+obj.value+'">'+obj.text+'</option>'
                     }
                     $(select).append(opts)
-                }
-            })
+                })
         }
-        $("#ciclos_tab").add_datatable()
-        attrsCycle=["name","duration","startDate","lastDate"]
         btnsCycle=["Editar","Ver","Eliminar"]
-        $ ("#ciclos_tab").update_datatable("administrador/listcycle",{academy_id:1},attrsCycle,btnsCycle)
+        $ ("#ciclos_tab").ajax_datatable("administrador/listcycle",{academy_id:1},"update",function(cycle){
+            return {id:cycle.id,values:[cycle.name,cycle.duration,cycle.startDate,cycle.lastDate]}
+        },btnsCycle)
         $("#ciclos_tab tbody").selectable()
-        $("#ciclos_tab tbody").acciones("cycle",attrsCycle)
-        $("#ciclos_tab tbody").on("click","button",function(e){
-            e.stopPropagation()
-            var tr=$(this).parent().parent()
-            if($(this).text()=="Ver"){
-                var div=$("a.list-group-item:eq(4)").next("div.list-group")
+        attrsCycle=["name","duration","startDate","lastDate"]
+        $("#ciclos_tab tbody").acciones("cycle",attrsCycle,{"Ver":ciclo_ver})
+        function ciclo_ver(btn){
+            var tr=$(btn).parent().parent()
+            var div=$("a.list-group-item:eq(4)").next("div.list-group")
+            div.data("visible",true)
+            div.css("display","block")
+            $(tr).ajax_model("administrador/findmodel",{model:"cycle",id:$(tr).attr("data-id")},function(cycle){
+                    $("#div_ciclos").data("cycle",cycle)
+                })
+            $("#ciclo_secciones_tab").ajax_datatable("administrador/listsection",{cycle_id:$("#div_ciclos").data("cycle").id},"update",function(section){
+                return {id:section.id,values:[section.name]}
+            })
+            $("#add_ciclo_seccion form" ).myValidate(true,{
+                name:{required:true,exist:{model:"Section",column:"name",condition:"cycle_id:"+tr.attr("data-id"),
+                    message:"La seccion ? del ciclo "+$("#div_ciclos").data("cycle").name+" ya existe"}}
+            })
+            $("a.list-group-item:eq(5)").click()
+
+            $("#ciclo_cursos_tab").ajax_datatable("administrador/listcyclexcourses",{cycle_id:$("#div_ciclos").data("cycle").id},"update",function(course){
+                return {id:course.id,values:[course.name]}
+            },["Eliminar"])
+            $("#add_ciclo_curso form").myValidate(false,{cursos:{required:true}})
+            $("#add_ciclo_curso_list").update_select("administrador/listcoursesnotincycle",{cycle_id:$("#div_ciclos").data("cycle").id},function(course){
+                return {value:course.id,text:course.name}
+            })
+            $("#ciclo_cursos_tab tbody").acciones("cyclexcourse",[],{"Eliminar":function(btn){
+                    var tr=$(btn).parent().parent()
+                    $(btn).accion_delete({ model:"cyclexcourse",course_id:$(tr).attr("data-id"),cycle_id:$("#div_ciclos").data("cycle").id})
+                    $("#add_ciclo_curso_list").update_select("administrador/listcoursesnotincycle",{cycle_id:$("#div_ciclos").data("cycle").id},function(course){
+                        return {value:course.id,text:course.name}
+                    })
+                }})
+            $("#ciclo_asignaturas_tab").ajax_datatable("administrador/listasignature",{cycle_id:$("#div_ciclos").data("cycle").id},"update",function(asignature){
+                return {
+                    id:[asignature.professor.id,asignature.course.id,asignature.section.id],
+                    values:[asignature.professor.lastname+" "+asignature.professor.name,asignature.course.name,asignature.section.name]
+                }
+            },["Eliminar"])
+            $("#add_ciclo_asignatura form").myValidate(false,{
+                profesores:{required:true},cursos:{required:true},secciones:{required:true}
+            })
+            $("#ciclo_asignaturas_tab tbody").acciones("asignature",[],{"Eliminar":function(btn){
+                    var tr=$(btn).parent().parent()
+                    var id=$(tr).attr("data-id").split(",")
+                    $(btn).accion_delete({ model:"asignature",professor_id:id[0],course_id:id[1],section_id:id[2]})
+                }})
+
+            $("#ciclo_examenes_tab").ajax_datatable("administrador/listexam",{cycle_id:$("#div_ciclos").data("cycle").id},"update",function(exam){
+                return {id:exam.id,values:[exam.date]}
+            },["Editar","Ver","Eliminar"])
+            $("#add_ciclo_examen form").myValidate(true,{
+                date:{required:true,mydate:{required:true,min:"today"},exist:{model:"Exam",column:"date",condition:"cycle_id:"+tr.attr("data-id"),
+                    message:"La fecha del examen del ciclo "+$("#div_ciclos").data("cycle").name+" ya existe"}}
+            })
+            $("#ciclo_examenes_tab tbody").acciones("exam",["date"],{"Ver":function(btn){
+                var tr=$(btn).parent().parent()
+                var div=$("a.list-group-item:eq(8)").next("div.list-group")
                 div.data("visible",true)
                 div.css("display","block")
-                $.ajax ( {
-                    type : "POST",
-                    url : "administrador/findmodel",
-                    async : false,
-                    data : { model:"cycle",id:$(tr).attr("data-id")},
-                    success : function (model) {
-                        $("#div_ciclos").data("cycle",model)
-                    }
-                })
-                $ ("#ciclo_secciones_tab").update_datatable("administrador/listsection",{cycle_id:$("#div_ciclos").data("cycle").id},attrsSeccion)
-                $("#add_ciclo_seccion form" ).myValidate(true,{
-                    name:{required:true,exist:{model:"Section",column:"name",condition:"cycle_id:"+tr.attr("data-id"),
-                        message:"La seccion ? del ciclo "+$("#div_ciclos").data("cycle").name+" ya existe"}}
-                })
-                $("a.list-group-item:eq(5)").click()
-
-                attrsCourse=["name"]
-                btnsCourse=["Eliminar"]
-                $("#ciclo_cursos_tab").update_datatable("administrador/listcyclexcourses",{cycle_id:$("#div_ciclos").data("cycle").id},attrsCourse,btnsCourse)
-                $("#add_ciclo_curso form").myValidate(false,{
-                    cursos:{required:true}
-                })
-                $("#add_ciclo_curso_list").update_select("administrador/listcoursesnotincycle",{cycle_id:$("#div_ciclos").data("cycle").id},"name")
-                $("#ciclo_cursos_tab tbody").on("click","button",function(e){
-                    e.stopPropagation()
-                    var tr=$(this).parent().parent()
-                    if($(this).text()=="Eliminar"){
-                        $.ajax ({
-                            type : "POST",
-                            url : "administrador/deletemodel",
-                            async : false,
-                            data : { model:"cyclexcourse",id:$(tr).attr("data-id"),cycle_id:$("#div_ciclos").data("cycle").id},
-                            success : function (){
-                                var table=$(tr).parent( ).parent( )
-                                $(table).data("datatable").DataTable().row(tr).remove().draw()
-                            }
-                        })
-                        $("#add_ciclo_curso_list").update_select("administrador/listcoursesnotincycle",{cycle_id:$("#div_ciclos").data("cycle").id},"name")
-                    }
-                })
-            }
-        })
+                $(tr).ajax_model("administrador/findmodel",{model:"exam",id:$(tr).attr("data-id")},function(exam){
+                        $("#div_ciclo_examenes").data("exam",exam)
+                    })
+                $("a.list-group-item:eq(9)").click()
+            }})
+        }
         $("#add_ciclo form").myValidate(false,{
             name:{required:true,exist:{model:"Cycle",column:"name",condition:"academy_id:1",message:"El ciclo ? ya existe"}}
         })
         $("#add_ciclo_plus").click(function(){
-            $("#ciclos_tab").new_model($("#add_ciclo form"),"cycles",{names:$("#add_ciclo_name").val(),delimiter:",",academy_id:1},attrsCycle,btnsCycle)
+            $("#ciclos_tab").ajax_form_datatable($("#add_ciclo form"),false,"administrador/addcycles",{names:$("#add_ciclo_name").val(),delimiter:",",academy_id:1},"add",
+               function(cycle){
+                    return {id:cycle.id,values:[cycle.name,cycle.duration,cycle.startDate,cycle.lastDate]}
+            },btnsCycle)
         })
     </script>
     <div id="div_ciclo_secciones" class="col-md-10 hidden">
@@ -476,13 +498,14 @@
                 }
             })
         }*/
-        attrsSeccion=["name"]
         $("#ciclo_secciones_tab").add_datatable()
         $("#ciclo_secciones_tab tbody" ).selectable()
-        $("#ciclo_secciones_tab tbody" ).acciones("section",attrsSeccion)
+        $("#ciclo_secciones_tab tbody" ).acciones("section",["name"])
         $("#add_ciclo_seccion_plus").click(function(){
-                $("#ciclo_secciones_tab").new_model($("#add_ciclo_seccion form"),"sections",{names:$("#add_ciclo_seccion_name").val(),
-                    delimiter:",",cycle_id:$("#div_ciclos").data("cycle").id},attrsSeccion)
+                $("#ciclo_secciones_tab").ajax_form_datatable($("#add_ciclo_seccion form"),false,"administrador/addsections",
+                {names:$("#add_ciclo_seccion_name").val(),delimiter:",",cycle_id:$("#div_ciclos").data("cycle").id},"add",function(section){
+                    return {id:section.id,values:[section.name]}
+                })
             })
     </script>
     <div id="div_ciclo_cursos" class="col-md-10 hidden">
@@ -515,21 +538,46 @@
                 $("#div_ciclo_cursos").removeClass("hidden")
             }
         })
-        attrsCourse=["name"]
-        btnsCourse=["Eliminar"]
         $("#ciclo_cursos_tab").add_datatable()
         $("#ciclo_cursos_tab tbody").selectable()
         $("#add_ciclo_curso_plus").click(function(){
             var cycle_id=$("#div_ciclos").data("cycle").id
-            $("#ciclo_cursos_tab").new_model($("#add_ciclo_curso form"),"cyclexcourse",{cycle_id:cycle_id,
-                course_id:$("#add_ciclo_curso_list").val()},attrsCourse,btnsCourse)
-            $("#add_ciclo_curso_list").update_select("administrador/listcoursesnotincycle",{cycle_id:cycle_id},"name")
+            $("#ciclo_cursos_tab").ajax_form_datatable($("#add_ciclo_curso form"),false,"administrador/addcyclexcourse",{cycle_id:cycle_id,
+                course_id:$("#add_ciclo_curso_list").val()},"add",function(course){
+                return {id:course.id,values:[course.name]}
+            },["Eliminar"])
+            $("#add_ciclo_curso_list").update_select("administrador/listcoursesnotincycle",{cycle_id:cycle_id},function(course){
+                return {value:course.id,text:course.name}
+            })
         })
     </script>
     <div id="div_ciclo_asignaturas" class="col-md-10 hidden">
         <div class="col-md-8">
             <h3>Ciclo </h3>
             <h3>Asignaturas</h3>
+            <div id="add_ciclo_asignatura">
+                <form class="form-horizontal col-md-8">
+                    <select id="add_ciclo_asig_profesores" name="profesores">
+                    </select>
+                    <select id="add_ciclo_asig_cursos" name="cursos">
+                    </select>
+                    <select id="add_ciclo_asig_secciones" name="secciones">
+                    </select>
+                    <input type="button" id="add_ciclo_asignatura_plus" class="btn btn-sm btn-primary" value="+">
+                </form>
+            </div>
+            <table id="ciclo_asignaturas_tab" class="display">
+            <thead>
+                <tr style="cursor: pointer">
+                    <th>Profesor</th>
+                    <th>Curso</th>
+                    <th>Seccion</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
         </div>
     </div>
     <script>
@@ -537,7 +585,170 @@
             if($("#div_ciclos").data("cycle") !== undefined){
                 $("#div_ciclo_asignaturas h3:first-child").text("Ciclo "+$("#div_ciclos").data("cycle").name)
                 $("#div_ciclo_asignaturas").removeClass("hidden")
+                $("#add_ciclo_asig_profesores").update_select("administrador/listprofessor",{},function(professor){
+                    return {value:professor.id,text:professor.lastname+" "+professor.name}
+                })
+                $("#add_ciclo_asig_secciones").update_select("administrador/listsection",{cycle_id:$("#div_ciclos").data("cycle").id},function(section){
+                    return {value:section.id,text:section.name}
+                })
+                $("#add_ciclo_asig_cursos").update_select("administrador/listcyclexcourses",{cycle_id:$("#div_ciclos").data("cycle").id},function(course){
+                    return {value:course.id,text:course.name}
+                })
             }
+        })
+        $("#ciclo_asignaturas_tab").add_datatable()
+        $("#ciclo_asignaturas_tab tbody").selectable()
+        $("#add_ciclo_asignatura_plus").click(function(){
+            if($("#add_ciclo_asignatura form").valid()){
+                $(this).ajax_model("validateexist",{model:"Asignature",column:"professor_id",value:$("#add_ciclo_asig_profesores").val(),
+                    condition:"course_id:"+$("#add_ciclo_asig_cursos").val()+",section_id:"+$("#add_ciclo_asig_secciones").val(),
+                    message:"La asignatura ya existe"},function(msg){
+                        if(msg!=""){
+                                $("#add_ciclo_asignatura form").find(".alert").remove()
+                                $("#add_ciclo_asignatura_plus").after('<div>'+msg+'</div>')
+                                $("#add_ciclo_asignatura_plus").next().addClass('alert alert-danger').css({"margin-left":15})
+                        }
+                        else{
+                            $("#ciclo_asignaturas_tab").ajax_form_datatable($("#add_ciclo_asignatura form"),false,"administrador/addasignature",
+                                {professor_id:$("#add_ciclo_asig_profesores").val(),course_id:$("#add_ciclo_asig_cursos").val(),section_id:$("#add_ciclo_asig_secciones").val()},"add",function(asignature){
+                                return {
+                                    id:[asignature.professor.id,asignature.course.id,asignature.section.id],
+                                    values:[asignature.professor.lastname+" "+asignature.professor.name,asignature.course.name,asignature.section.name]
+                                }
+                            },["Eliminar"])
+                        }
+                    })
+            }
+        })
+    </script>
+    <div id="div_ciclo_examenes" class="col-md-10 hidden">
+        <div class="col-md-8">
+            <h3>Ciclo </h3>
+            <h3>Examenes</h3>
+            <div id="add_ciclo_examen">
+                <form class="form-horizontal col-md-8">
+                    <input type="text" id="add_ciclo_examen_date" name="date" placeholder="Fecha..." style="width: 120px">
+                     <input type="button" id="add_ciclo_examen_plus" class="btn btn-sm btn-primary" value="+">
+                </form>
+            </div>
+            <table id="ciclo_examenes_tab" class="display">
+                <thead>
+                    <tr style="cursor: pointer">
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        $("a.list-group-item:eq(8)").click(function(){
+            if($("#div_ciclos").data("cycle") !== undefined){
+                $("#div_ciclo_examenes h3:first-child").text("Ciclo "+$("#div_ciclos").data("cycle").name)
+                $("#div_ciclo_examenes").removeClass("hidden")
+            }
+        })
+        $("#ciclo_examenes_tab").add_datatable()
+        $("#ciclo_examenes_tab tbody").selectable()
+        $("#add_ciclo_examen_date").datetimepicker({
+            lang:"es",
+		    format:'d/m/y H:i',
+            allowTimes:['8:00','8:30','9:00','9:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30',
+            '14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00']
+        })
+        $("#add_ciclo_examen_plus").click(function(){
+            $("#ciclo_examenes_tab").ajax_form_datatable($("#add_ciclo_examen form"),false,"administrador/addexam",
+                {date:$("#add_ciclo_examen_date").val(),cycle_id:$("#div_ciclos").data("cycle").id},"add",function(exam){
+                    return {id:exam.id,values:[exam.date]}
+            },["Editar","Ver","Eliminar"])
+        })
+    </script>
+    <div id="div_ciclo_examen_temas" class="col-md-10 hidden">
+        <div class="col-md-8">
+            <h3>Ciclo </h3>
+            <h3>Examen</h3>
+            <h3>Cursos</h3>
+            <div id="add_ciclo_examen_tema">
+                <select id="add_ciclo_examen_curso_list">
+                </select>
+                <h3>Temas</h3>
+                <form class="form-horizontal col-md-8">
+                    <select id="add_ciclo_examen_tema_list" name="temas">
+                    </select>
+                    <input type="button" id="add_ciclo_examen_tema_plus" class="btn btn-sm btn-primary" value="+">
+                </form>
+            </div>
+            <table id="ciclo_examen_temas_tab" class="display">
+                <thead>
+                    <tr style="cursor: pointer">
+                        <th>Nombre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        $("a.list-group-item:eq(9)").click(function(){
+            if($("#div_ciclo_examenes").data("exam") !== undefined){
+                $("#div_ciclo_examen_temas h3:eq(0)").text("Ciclo "+$("#div_ciclos").data("cycle").name)
+                $("#div_ciclo_examen_temas h3:eq(1)").text("Examen "+$("#div_ciclo_examenes").data("exam").date)
+                $("#div_ciclo_examen_temas").removeClass("hidden")
+                $("#add_ciclo_examen_curso_list").update_select("administrador/listcyclexcourses",{cycle_id:$("#div_ciclos").data("cycle").id},function(course){
+                    return {value:course.id,text:course.name}
+                })
+                if($("#add_ciclo_examen_curso_list").val()==null){
+                    $("#add_ciclo_examen_tema_list").text("")
+                    $("#ciclo_examen_temas_tab tbody").text("")
+                }
+                else{
+                    $("#add_ciclo_examen_curso_list").unbind("change")
+                    $("#add_ciclo_examen_curso_list").change(function(){
+                        var exam_id=$("#div_ciclo_examenes").data("exam").id
+                        var course_id=$("#add_ciclo_examen_curso_list").val()
+                        $("#ciclo_examen_temas_tab").ajax_datatable("administrador/listexamxthemes",{exam_id:exam_id,course_id:course_id},"update",function(theme){
+                            return {id:theme.id,values:[theme.name]}
+                        },["Eliminar"])
+                        $("#add_ciclo_examen_tema form").myValidate(false,{temas:{required:true}})
+                        $("#add_ciclo_examen_tema_list").update_select("administrador/listthemesnotinexam",{exam_id:exam_id,course_id:course_id},function(theme){
+                            return {value:theme.id,text:theme.name}
+                        })
+                        $("#ciclo_examen_temas_tab tbody").acciones("examxtheme",[],{"Eliminar":function(btn){
+                            var tr=$(btn).parent().parent()
+                            $(btn).accion_delete({ model:"examxtheme",theme_id:$(tr).attr("data-id"),exam_id:exam_id})
+                            $("#add_ciclo_examen_tema_list").update_select("administrador/listthemesnotinexam",{exam_id:exam_id,course_id:course_id},function(theme){
+                                return {value:theme.id,text:theme.name}
+                            })
+                        }})
+                    })
+                    $("#ciclo_examen_temas_tab").ajax_datatable("administrador/listexamxthemes",{exam_id:$("#div_ciclo_examenes").data("exam").id,
+                        course_id:$("#add_ciclo_examen_curso_list").val()},"update",function(theme){
+                        return {id:theme.id,values:[theme.name]}
+                    },["Eliminar"])
+                    $("#add_ciclo_examen_tema form").myValidate(false,{temas:{required:true}})
+                    $("#add_ciclo_examen_tema_list").update_select("administrador/listthemesnotinexam",{exam_id:$("#div_ciclo_examenes").data("exam").id,
+                        course_id:$("#add_ciclo_examen_curso_list").val()},function(theme){
+                        return {value:theme.id,text:theme.name}
+                    })
+                }
+            }
+        })
+        $("#ciclo_examen_temas_tab").add_datatable()
+        $("#ciclo_examen_temas_tab tbody").selectable()
+        $("#add_ciclo_examen_tema_plus").click(function(){
+            var exam_id=$("#div_ciclo_examenes").data("exam").id
+            $("#ciclo_examen_temas_tab").ajax_form_datatable($("#add_ciclo_examen_tema form"),false,"administrador/addexamxtheme",{exam_id:exam_id,
+                theme_id:$("#add_ciclo_examen_tema_list").val()},"add",function(theme){
+                return {id:theme.id,values:[theme.name]}
+            },["Eliminar"])
+            $("#add_ciclo_examen_tema_list").update_select("administrador/listthemesnotinexam",{exam_id:exam_id,
+                course_id:$("#add_ciclo_examen_curso_list").val()},function(theme){
+                return {value:theme.id,text:theme.name}
+            })
         })
     </script>
     <div id="div_profesores" class="col-md-10 hidden">
@@ -554,7 +765,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for(professor <- Professor.find.all()) {
+                    @for(professor <- Professor.find.where().orderBy("lastname,name asc").findList()) {
                         <tr data-id="@{professor.id}">
                             <td>@professor.name</td>
                             <td>@professor.lastname</td>
@@ -643,25 +854,24 @@
             {"label":{"text":"Apellidos:"},"input":{"type":"text","id":"add_profesor_lastname","name":"lastname","placeholder":"Apellidos...","attrCss":"width: 200px"}}]]
         ],{"id":"add_profesor_save","value":"guardar"})
         $("#profesores_tab").add_datatable()
-        attrsProfessor=["name","lastname"]
         $("#profesores_tab tbody").selectable()
-        $("#profesores_tab tbody").acciones("professor",attrsProfessor)
+        $("#profesores_tab tbody").acciones("professor",["name","lastname"])
         $("#add_profesor form:nth-child(1)").myValidate(true,{
             user_email:{required:true,email:true,exist:{model:"User",column:"email",message:"El usuario con email ? ya existe"}},
-            user_pass:{required:true,minlength:3,maxlength:15}},{"margin-left":15},"after")
+            user_pass:{required:true,minlength:3,maxlength:15}},function(element,error){
+                $(error).css({"margin-left":15})
+                $(element).after(error)
+        })
         $("#add_profesor form:nth-child(2)").myValidate(true,{
-            name:{required:true},
-            lastname:{required:true}},{"margin-left":15},"after")
+            name:{required:true},lastname:{required:true}},function(element,error){
+                $(error).css({"margin-left":15})
+                $(element).after(error)
+        })
         $("#add_profesor_save").click(function(){
             var form=$("#add_profesor form:nth-child(2)")
             if(form.valid()){
-                $.ajax({
-                    type: "POST",
-                    async: false,
-                    url: "validateexist",
-                    data: {model:"Professor",column:"name",value:$("#add_profesor_name").val(),condition:"lastname:"+$("#add_profesor_lastname").val(),
-                        message:"El profesor ? "+$("#add_profesor_lastname").val()+" ya existe"},
-                    success: function(msg){
+                $(this).ajax_model("validateexist",{model:"Professor",column:"name",value:$("#add_profesor_name").val(),condition:"lastname:"+$("#add_profesor_lastname").val(),
+                        message:"El profesor ? "+$("#add_profesor_lastname").val()+" ya existe"},function(msg){
                         if(msg!=""){
                             $("#add_profesor form:nth-child(2)").find(".alert").remove()
                             $("#add_profesor_lastname").after('<div>'+msg+'</div>')
@@ -669,21 +879,17 @@
                         }
                         else{
                             var user_id=0
-                            $.ajax ( {
-                                type : "POST",
-                                url : "administrador/adduser",
-                                async: false,
-                                data : {email:$("#add_profesor_user_email").val(),pass:$("#add_profesor_user_pass").val(),role_id:1},
-                                success : function (user) {
-                                    user_id=user.id
-                                }
+                            $(this).ajax_model("administrador/adduser",{email:$("#add_profesor_user_email").val(),pass:$("#add_profesor_user_pass").val(),role_id:1},
+                                function(user){
+                                user_id=user.id
+                                })
+                            $("#profesores_tab").ajax_form_datatable($("#add_profesor form:nth-child(2)"),false,"administrador/addprofessor",{name:$("#add_profesor_name").val(),
+                                lastname:$("#add_profesor_lastname").val(),user_id:user_id},"add",function(professor){
+                                return {id:professor.id,values:[professor.name,professor.lastname]}
                             })
-                            $("#profesores_tab").new_model($("#add_profesor form:nth-child(2)"),"professor",{name:$("#add_profesor_name").val(),
-                                lastname:$("#add_profesor_lastname").val(),user_id:user_id},attrsProfessor)
                             $("#add_profesor_back").trigger("click")
                         }
-                    }
-                })
+                    })
             }
         })
     </script>
@@ -701,7 +907,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for(student <- Student.find.all()) {
+                    @for(student <- Student.find.where().orderBy("lastname,name asc").findList()) {
                         <tr data-id="@{student.id}">
                             <td>@student.name</td>
                             <td>@student.lastname</td>
@@ -726,25 +932,25 @@
             {"label":{"text":"Apellidos:"},"input":{"type":"text","id":"add_alumno_lastname","name":"lastname","placeholder":"Apellidos...","attrCss":"width: 200px"}}]]
         ],{"id":"add_alumno_save","value":"guardar"})
         $("#alumnos_tab").add_datatable()
-        attrsStudent=["name","lastname"]
         $("#alumnos_tab tbody").selectable()
-        $("#alumnos_tab tbody").acciones("student",attrsStudent)
+        $("#alumnos_tab tbody").acciones("student",["name","lastname"])
         $("#add_alumno form:nth-child(1)").myValidate(true,{
             user_email:{required:true,email:true,exist:{model:"User",column:"email",message:"El usuario con email ? ya existe"}},
-            user_pass:{required:true,minlength:3,maxlength:15}},{"margin-left":15},"after")
+            user_pass:{required:true,minlength:3,maxlength:15}},function(element,error){
+                $(error).css({"margin-left":15})
+                $(element).after(error)
+        })
         $("#add_alumno form:nth-child(2)").myValidate(true,{
             name:{required:true},
-            lastname:{required:true}},{"margin-left":15},"after")
+            lastname:{required:true}},function(element,error){
+                $(error).css({"margin-left":15})
+                $(element).after(error)
+        })
         $("#add_alumno_save").click(function(){
             var form=$("#add_alumno form:nth-child(2)")
             if(form.valid()){
-                $.ajax({
-                    type: "POST",
-                    async: false,
-                    url: "validateexist",
-                    data: {model:"Student",column:"name",value:$("#add_alumno_name").val(),condition:"lastname:"+$("#add_alumno_lastname").val(),
-                        message:"El alumno ? "+$("#add_alumno_lastname").val()+" ya existe"},
-                    success: function(msg){
+                $(this).ajax_model("validateexist",{model:"Student",column:"name",value:$("#add_alumno_name").val(),condition:"lastname:"+$("#add_alumno_lastname").val(),
+                        message:"El alumno ? "+$("#add_alumno_lastname").val()+" ya existe"},function(msg){
                         if(msg!=""){
                             $("#add_alumno form:nth-child(2)").find(".alert").remove()
                             $("#add_alumno_lastname").after('<div>'+msg+'</div>')
@@ -752,21 +958,17 @@
                         }
                         else{
                             var user_id=0
-                            $.ajax ( {
-                                type : "POST",
-                                url : "administrador/adduser",
-                                async: false,
-                                data : {email:$("#add_alumno_user_email").val(),pass:$("#add_alumno_user_pass").val(),role_id:2},
-                                success : function (user) {
+                            $(this).ajax_model("administrador/adduser",{email:$("#add_alumno_user_email").val(),pass:$("#add_alumno_user_pass").val(),role_id:2},
+                                function (user){
                                     user_id=user.id
-                                }
+                                })
+                            $("#alumnos_tab").ajax_form_datatable($("#add_alumno form:nth-child(2)"),false,"administrador/addstudent",{name:$("#add_alumno_name").val(),
+                                lastname:$("#add_alumno_lastname").val(),user_id:user_id},"add",function(student){
+                                return {id:student.id,values:[student.name,student.lastname]}
                             })
-                            $("#alumnos_tab").new_model($("#add_alumno form:nth-child(2)"),"student",{name:$("#add_alumno_name").val(),
-                                lastname:$("#add_alumno_lastname").val(),user_id:user_id},attrsStudent)
                             $("#add_alumno_back").trigger("click")
                         }
-                    }
-                })
+                    })
             }
         })
     </script>

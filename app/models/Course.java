@@ -39,10 +39,10 @@ public class Course extends Model{
     }
     public static Model.Finder<Integer,Course> find = new Model.Finder<>(Integer.class,Course.class);
 
-    public List<Theme> themes(int exam_id,int cycle_id){
+    public List<Theme> themes(int exam_id){
         SqlQuery query = Ebean.createSqlQuery("select th.id from course co join theme th on (co.id=:id and co.id=th.course_id) " +
-                "join exam_x_theme et on (et.theme_id=th.id) join exam e on (e.id=:e_id and e.id=et.exam_id and e.cycle_id=:cy_id)")
-                .setParameter("id",id).setParameter("e_id",exam_id).setParameter("cy_id",cycle_id);
+                "join exam_x_theme et on (et.theme_id=th.id) join exam e on (e.id=:e_id and e.id=et.exam_id)")
+                .setParameter("id",id).setParameter("e_id",exam_id);
 
         List<SqlRow> rows = query.findList();
         List<Theme> themes=new ArrayList<>();

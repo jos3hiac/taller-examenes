@@ -19,12 +19,16 @@
                 <a class="list-group-item">secciones</a>
                 <a class="list-group-item">cursos</a>
                 <a class="list-group-item">asignaturas</a>
+                <a class="list-group-item">Examenes</a>
+                <div class="list-group" style="display:none">
+                    <a class="list-group-item">temas</a>
+                </div>
             </div>
         </div>
         <script>
             $("a.list-group-item:first-child").addClass("active")
             $("a.list-group-item").click(function(){
-                $("#tree").find(".active").removeClass("active")
+                $("#tree .active").removeClass("active")
                 $(this).addClass("active")
                 if($(this).next("div.list-group").data("visible")!== undefined)
                     $(this).next("div.list-group").toggle()

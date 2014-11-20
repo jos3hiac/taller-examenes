@@ -65,6 +65,20 @@ public class Application extends Controller {
         flash("info", "La sesión ha sido cerrada");
         return redirect(routes.Application.login());
     }
+    public static Result validateDate(){
+        DynamicForm data = form().bindFromRequest();
+        String error="";
+        if(data.get("required")!=null){
+            if(getDate(data.get("value"))==null)error="La fecha debe ser válida";
+        }
+        if(data.get("min")!=null && error==""){
+            if(data.get("min").equals("today")){
+                if(getDate(data.get("value")).before(new Date()))
+                    error="La fecha debe ser mínimo la fecha actual";
+            }
+        }
+        return ok(error);
+    }
     public static Result validateListExist(){
         DynamicForm data = form().bindFromRequest();
         String values=data.get("values");
@@ -74,7 +88,7 @@ public class Application extends Controller {
         }
         if(!lista.equals("")){
             lista=lista.substring(1);
-            error=message.split("\\?")[0]+lista+message.split("\\?")[1];
+            error=message.split("\\?").length==1?message:message.split("\\?")[0]+lista+message.split("\\?")[1];
         }
         return ok(error);
     }
@@ -82,7 +96,7 @@ public class Application extends Controller {
         DynamicForm data = form().bindFromRequest();
         String error="",message=data.get("message");
         if(exist(data.get("model"),data.get("column"),data.get("value"),data.get("condition")))
-            error=message.split("\\?")[0]+data.get("value")+message.split("\\?")[1];
+            error=message.split("\\?").length==1?message:message.split("\\?")[0]+data.get("value")+message.split("\\?")[1];
         return ok(error);
     }
     private static boolean exist(String model,String column,String value,String conditions){
@@ -95,6 +109,8 @@ public class Application extends Controller {
             case "Professor":exist=exist(Professor.find.where(),column,value,conditions);break;
             case "Student":exist=exist(Student.find.where(),column,value,conditions);break;
             case "User":exist=exist(User.find.where(),column,value,conditions);break;
+            case "Asignature":exist=exist(Asignature.find.where(),column,value,conditions);break;
+            case "Exam":exist=exist(Exam.find.where(),column,value,conditions);break;
         }
         return exist;
     }
@@ -122,11 +138,13 @@ public class Application extends Controller {
     public static String getDate(Date date){
         return new SimpleDateFormat("dd/MM/yy").format(date);
     }
+    public static String getDateTime(Date date){return new SimpleDateFormat("dd/MM/yy HH:mm").format(date);}
     public static String getDate(Date date,String format){
         return new SimpleDateFormat(format).format(date);
     }
     public static Date getDate(String input){
         List<SimpleDateFormat> formats = new ArrayList<>();
+        formats.add(new SimpleDateFormat("dd/MM/yy HH:mm"));formats.add(new SimpleDateFormat("dd-MM-yy HH:mm"));
         formats.add(new SimpleDateFormat("dd/MM/yy"));formats.add(new SimpleDateFormat("dd-MM-yy"));
         Date date = null;
         if(input == null) {
