@@ -7,8 +7,7 @@ import play.mvc.*;
 import models.*;
 import views.html.*;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -47,7 +46,12 @@ public class Application extends Controller {
                 flash("danger","El usuario o la contraseña son incorrectos");
                 return redirect(routes.Application.login());
             }
-            else {
+            else if(user.active==0){
+                flash("type","info");
+                flash("info","Su cuenta de usuario está desactivada");
+                return redirect(routes.Application.login());
+            }
+            else{
                 session("email", user.email);
                 if(user.professor!=null)
                     return redirect(routes.Profesor.index());
@@ -163,12 +167,32 @@ public class Application extends Controller {
         }
         return date;
     }
+    public static boolean CopyFile(File dirOrigen, File dirDestino){
+        boolean error=false;
+        try {
+            InputStream in = new FileInputStream(dirOrigen);
+            OutputStream out = new FileOutputStream(dirDestino);
+
+            byte[] buffer = new byte[1024];
+            int len;
+            // recorrer el array de bytes y recomponerlo
+            while ((len = in.read(buffer)) > 0) {
+                out.write(buffer, 0, len);
+            } // end while
+            out.flush();
+             in.close();
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();error=true;
+        }
+        return !error;
+    }
     public static boolean B64ToFile(String base,String path,String filename){
         boolean error=false;
         FileOutputStream fileOutputStream=null;
         try {
             byte[] decode = Base64Coder.decode(base);
-            File file=new File(path+"\\"+filename);
+            File file=new File(path+"/"+filename);
             fileOutputStream = new FileOutputStream(file);
             fileOutputStream.write(decode);
             fileOutputStream.close();

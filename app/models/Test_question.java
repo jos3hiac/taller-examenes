@@ -1,10 +1,8 @@
 package models;
 
-import com.avaje.ebean.*;
 import play.db.ebean.Model;
 
 import javax.persistence.*;
-import java.util.*;
 
 @Entity
 public class Test_question extends Model{

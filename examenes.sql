@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 16-10-2014 a las 09:53:10
+-- Tiempo de generación: 27-11-2014 a las 20:37:17
 -- Versión del servidor: 5.6.11
 -- Versión de PHP: 5.5.3
 
@@ -19,7 +19,7 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `examenes`
 --
-CREATE DATABASE IF NOT EXISTS `examenes` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
+CREATE DATABASE IF NOT EXISTS `examenes` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 USE `examenes`;
 
 -- --------------------------------------------------------
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `academy` (
   `name` varchar(45) DEFAULT NULL,
   `direction` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2 ;
 
 --
 -- Volcado de datos para la tabla `academy`
@@ -55,14 +55,14 @@ CREATE TABLE IF NOT EXISTS `admin` (
   `user_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_admin_user1_idx` (`user_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2 ;
 
 --
 -- Volcado de datos para la tabla `admin`
 --
 
 INSERT INTO `admin` (`id`, `name`, `lastname`, `user_id`) VALUES
-(1, 'Jose', '', 1);
+(1, 'José', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -77,7 +77,15 @@ CREATE TABLE IF NOT EXISTS `asignature` (
   PRIMARY KEY (`professor_id`,`course_id`,`section_id`),
   KEY `fk_professor_x_course_x_section_course1_idx` (`course_id`),
   KEY `fk_professor_x_course_x_section_section1_idx` (`section_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Volcado de datos para la tabla `asignature`
+--
+
+INSERT INTO `asignature` (`professor_id`, `course_id`, `section_id`) VALUES
+(1, 1, 1),
+(1, 2, 1);
 
 -- --------------------------------------------------------
 
@@ -92,7 +100,24 @@ CREATE TABLE IF NOT EXISTS `choice` (
   `question_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_choice_question1_idx` (`question_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=14 ;
+
+--
+-- Volcado de datos para la tabla `choice`
+--
+
+INSERT INTO `choice` (`id`, `value`, `image`, `question_id`) VALUES
+(1, 'no', NULL, 1),
+(2, 'si', NULL, 1),
+(3, NULL, '27.jpg,-21,-109,138,26', 2),
+(4, NULL, '27.jpg,-11,-133,151,20', 2),
+(7, NULL, '50.jpg,-13,-1,134,37', 5),
+(8, NULL, '50.jpg,0,-110,159,46', 5),
+(9, NULL, '31.jpg,-29,-22,106,82', 6),
+(10, NULL, '31.jpg,-28,-102,106,97', 6),
+(11, '2', NULL, 7),
+(12, '8', NULL, 7),
+(13, '4', NULL, 7);
 
 -- --------------------------------------------------------
 
@@ -106,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `course` (
   `name` varchar(45) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `code_UNIQUE` (`code`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=5 ;
 
 --
 -- Volcado de datos para la tabla `course`
@@ -133,7 +158,14 @@ CREATE TABLE IF NOT EXISTS `cycle` (
   `academy_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_cycle_academy1_idx` (`academy_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2 ;
+
+--
+-- Volcado de datos para la tabla `cycle`
+--
+
+INSERT INTO `cycle` (`id`, `name`, `duration`, `startDate`, `lastDate`, `academy_id`) VALUES
+(1, 'Anual San Marcos 2014', '8 meses', '2014-04-07', '2014-12-19', 1);
 
 -- --------------------------------------------------------
 
@@ -147,7 +179,15 @@ CREATE TABLE IF NOT EXISTS `cycle_x_course` (
   PRIMARY KEY (`cycle_id`,`course_id`),
   KEY `fk_cycle_has_course_course1_idx` (`course_id`),
   KEY `fk_cycle_has_course_cycle1_idx` (`cycle_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Volcado de datos para la tabla `cycle_x_course`
+--
+
+INSERT INTO `cycle_x_course` (`cycle_id`, `course_id`) VALUES
+(1, 1),
+(1, 2);
 
 -- --------------------------------------------------------
 
@@ -157,11 +197,19 @@ CREATE TABLE IF NOT EXISTS `cycle_x_course` (
 
 CREATE TABLE IF NOT EXISTS `exam` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `date` date DEFAULT NULL,
+  `date` datetime DEFAULT NULL,
   `cycle_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_exam_cycle1_idx` (`cycle_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=3 ;
+
+--
+-- Volcado de datos para la tabla `exam`
+--
+
+INSERT INTO `exam` (`id`, `date`, `cycle_id`) VALUES
+(1, '2014-11-24 10:00:00', 1),
+(2, '2014-11-25 14:00:00', 1);
 
 -- --------------------------------------------------------
 
@@ -176,7 +224,7 @@ CREATE TABLE IF NOT EXISTS `exam_question` (
   `professor_question_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_exam_question_professor_question1_idx` (`professor_question_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
@@ -190,7 +238,18 @@ CREATE TABLE IF NOT EXISTS `exam_x_theme` (
   PRIMARY KEY (`exam_id`,`theme_id`),
   KEY `fk_exam_has_theme_theme1_idx` (`theme_id`),
   KEY `fk_exam_has_theme_exam1_idx` (`exam_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Volcado de datos para la tabla `exam_x_theme`
+--
+
+INSERT INTO `exam_x_theme` (`exam_id`, `theme_id`) VALUES
+(1, 1),
+(2, 1),
+(1, 4),
+(2, 4),
+(2, 5);
 
 -- --------------------------------------------------------
 
@@ -207,7 +266,14 @@ CREATE TABLE IF NOT EXISTS `professor` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `code_UNIQUE` (`code`),
   KEY `fk_professor_user1_idx` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2 ;
+
+--
+-- Volcado de datos para la tabla `professor`
+--
+
+INSERT INTO `professor` (`id`, `code`, `name`, `lastname`, `user_id`) VALUES
+(1, NULL, 'ADRIÁN GUILLERMO', 'ALIAGA LLANOS', 2);
 
 -- --------------------------------------------------------
 
@@ -216,7 +282,7 @@ CREATE TABLE IF NOT EXISTS `professor` (
 --
 
 CREATE TABLE IF NOT EXISTS `professor_question` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `professor_id` int(11) NOT NULL,
   `exam_id` int(11) NOT NULL,
   `question_id` int(11) NOT NULL,
@@ -224,7 +290,18 @@ CREATE TABLE IF NOT EXISTS `professor_question` (
   KEY `fk_professor_question_professor1_idx` (`professor_id`),
   KEY `fk_professor_question_exam1_idx` (`exam_id`),
   KEY `fk_professor_question_question1_idx` (`question_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=12 ;
+
+--
+-- Volcado de datos para la tabla `professor_question`
+--
+
+INSERT INTO `professor_question` (`id`, `professor_id`, `exam_id`, `question_id`) VALUES
+(2, 1, 1, 2),
+(5, 1, 1, 6),
+(6, 1, 2, 5),
+(7, 1, 2, 7),
+(11, 1, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -241,7 +318,18 @@ CREATE TABLE IF NOT EXISTS `question` (
   PRIMARY KEY (`id`),
   KEY `fk_exam_detail_choice1_idx` (`choice_id`),
   KEY `fk_question_theme1_idx` (`theme_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=8 ;
+
+--
+-- Volcado de datos para la tabla `question`
+--
+
+INSERT INTO `question` (`id`, `value`, `image`, `choice_id`, `theme_id`) VALUES
+(1, '-(A U B) = -A ∩ -B', NULL, 2, 1),
+(2, NULL, '27.jpg,-54,-2,80,76', 4, 4),
+(5, NULL, '50.jpg,-14,-36,134,76', 8, 4),
+(6, NULL, '19.jpg,-5,-25,217,116', 10, 4),
+(7, '2 ^ ( 2 x 2^0+1) es ', NULL, 12, 4);
 
 -- --------------------------------------------------------
 
@@ -253,7 +341,7 @@ CREATE TABLE IF NOT EXISTS `role` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `description` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=4 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=4 ;
 
 --
 -- Volcado de datos para la tabla `role`
@@ -276,7 +364,14 @@ CREATE TABLE IF NOT EXISTS `section` (
   `cycle_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_section_cycle1_idx` (`cycle_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=2 ;
+
+--
+-- Volcado de datos para la tabla `section`
+--
+
+INSERT INTO `section` (`id`, `name`, `cycle_id`) VALUES
+(1, 'A', 1);
 
 -- --------------------------------------------------------
 
@@ -295,7 +390,7 @@ CREATE TABLE IF NOT EXISTS `student` (
   UNIQUE KEY `code_UNIQUE` (`code`),
   KEY `fk_student_user1_idx` (`user_id`),
   KEY `fk_student_section1_idx` (`section_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
@@ -313,7 +408,7 @@ CREATE TABLE IF NOT EXISTS `test` (
   PRIMARY KEY (`id`),
   KEY `fk_test_student2_idx` (`student_id`),
   KEY `fk_test_exam1_idx` (`exam_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
@@ -330,7 +425,7 @@ CREATE TABLE IF NOT EXISTS `test_question` (
   KEY `fk_test_question_exam_question1_idx` (`exam_question_id`),
   KEY `fk_test_question_choice1_idx` (`choice_id`),
   KEY `fk_test_question_test1_idx` (`test_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
@@ -344,7 +439,19 @@ CREATE TABLE IF NOT EXISTS `theme` (
   `course_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_theme_course1_idx` (`course_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=7 ;
+
+--
+-- Volcado de datos para la tabla `theme`
+--
+
+INSERT INTO `theme` (`id`, `name`, `course_id`) VALUES
+(1, 'TEORÍA DE CONJUNTOS', 2),
+(2, 'NUMERACIÓN', 2),
+(3, 'DIVISIBILIDAD', 2),
+(4, 'TEORÍA DE EXPONENTES', 1),
+(5, 'POLINOMIOS', 1),
+(6, 'PRODUCTOS NOTABLES', 1);
 
 -- --------------------------------------------------------
 
@@ -356,18 +463,20 @@ CREATE TABLE IF NOT EXISTS `user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `email` varchar(30) NOT NULL,
   `pass` varchar(30) NOT NULL,
+  `active` int(11) DEFAULT '1',
   `role_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username_UNIQUE` (`email`),
   KEY `fk_user_role_idx` (`role_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=3 ;
 
 --
 -- Volcado de datos para la tabla `user`
 --
 
-INSERT INTO `user` (`id`, `email`, `pass`, `role_id`) VALUES
-(1, 'admin', '123', 3);
+INSERT INTO `user` (`id`, `email`, `pass`, `active`, `role_id`) VALUES
+(1, 'admin', '123', 1, 3),
+(2, 'adrian@gmail.com', '123', 1, 1);
 
 --
 -- Restricciones para tablas volcadas

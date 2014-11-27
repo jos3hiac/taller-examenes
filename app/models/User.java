@@ -11,6 +11,7 @@ public class User extends Model {
     public Integer id;
     public String email;
     public String pass;
+    public int active;
     @ManyToOne
     @JoinColumn(name="role_id")
     public Role role;
@@ -36,8 +37,13 @@ public class User extends Model {
         map.put("id",id+"");
         map.put("email",email);
         map.put("pass",pass);
+        map.put("active",active+"");
         map.put("role_id",role.id+"");
         return map;
+    }
+    public void updateActive(int active){
+        this.active=active;
+        update();
     }
     public void update(String pass){
         this.pass=pass;

@@ -19,7 +19,7 @@ public class Professor extends Model{
     @OneToMany(mappedBy = "professor")
     public List<Asignature> asignatures;
     @OneToMany(mappedBy = "professor")
-    public List<Professor_question> professor_questions;
+    public List<Professor_question> professorquestions;
 
     public Professor(String name,String lastname,int user_id){
         this.name=name;

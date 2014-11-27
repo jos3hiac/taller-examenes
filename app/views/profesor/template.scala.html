@@ -5,7 +5,7 @@
             <div class="col-md-3">
                 @professor.name <a href="/logout" class="btn btn-primary">Cerrar Sesion</a>
             </div>
-            <div id="preguntas_rel" class="col-md-3 col-md-offset-6">
+            <div id="preguntas_rel" class="col-md-3 col-md-offset-6 hidden">
                 <a class="nbs-a">Preguntas relacionadas</a>
                 <div id="questions" style="position: absolute;width:250px;margin-top: 5px;right: 25%;z-index:800;display: none">
                 </div>
@@ -15,19 +15,15 @@
     </div>
     <div class="row">
         <div class="col-md-3">
-            <div class="list-group" id="tree">
-                <a class="list-group-item">Nueva Pregunta</a>
-                <div id="nueva_pregunta" class="list-group" data-ord="1" style="display:none">
-                    @for(cycle<-professor.cycles()){
-                        <a class="list-group-item" data-id="@{cycle.id}">@cycle.name</a>
-                    }
-                </div>
-                <a class="list-group-item">Otra cosa</a>
+            <div id="tree" class="list-group" data-ord="1">
+                @for(cycle<-professor.cycles()){
+                    <a class="list-group-item" data-id="@{cycle.id}">CICLO  @cycle.name</a>
+                }
             </div>
         </div>
         <script>
             $("#tree>a.list-group-item:first-child").addClass("active")
-            $("#tree>a.list-group-item").click(function(){
+            /*$("#tree>a.list-group-item").click(function(){
                 $("#tree .active").removeClass("active")
                 $(this).addClass("active")
                 $(this).next("div.list-group").toggle()
@@ -35,8 +31,8 @@
             })
             $("#tree>a.list-group-item:nth-child(1)").click(function(){
                 $("#div_pregunta").removeClass("hidden")
-            })
-            $("#nueva_pregunta").on('click','a.list-group-item',function(){
+            })*/
+            $("#tree").on('click','a.list-group-item',function(){
                 var ord=parseInt($(this).parent().data("ord"))
                 if($(this).next("div").length==0 && ord<4){
                     $(this).after('<div class="list-group" style="display:none"></div>')
@@ -50,7 +46,7 @@
                             data : {"cycle_id":$(this).data("id")},
                             success:function(exams){
                                 for(var i in exams){
-                                    $(div).append('<a class="list-group-item" data-id="'+exams[i].id+'">'+exams[i].date+'</a>')
+                                    $(div).append('<a class="list-group-item" data-id="'+exams[i].id+'">'+"EXAMEN DEL  "+ exams[i].date+'</a>')
                                     var a=$(div).find("a:last-child")
                                     $(a).data("id",$(div).prev("a").data("id")+"."+$(a).data("id"))
                                 }
@@ -66,7 +62,7 @@
                             data : {"cycle_id":$(this).data("id").split(".")[0]},
                             success:function(courses){
                                 for(var i in courses){
-                                    $(div).append('<a class="list-group-item" data-id="'+courses[i].id+'">'+courses[i].name+'</a>')
+                                    $(div).append('<a class="list-group-item" data-id="'+courses[i].id+'">'+"CURSO  "+courses[i].name+'</a>')
                                     var a=$(div).find("a:last-child")
                                     $(a).data("id",$(div).prev("a").data("id")+"."+$(a).data("id"))
                                 }
@@ -82,7 +78,7 @@
                             data : {"exam_id":$(this).data("id").split(".")[1],"course_id":$(this).data("id").split(".")[2]},
                             success:function(themes){
                                 for(var i in themes){
-                                    $(div).append('<a class="list-group-item" data-id="'+themes[i].id+'">'+themes[i].name+'</a>')
+                                    $(div).append('<a class="list-group-item" data-id="'+themes[i].id+'">'+"TEMA  "+themes[i].name+'</a>')
                                     var a=$(div).find("a:last-child")
                                     $(a).data("id",$(div).prev("a").data("id")+"."+$(a).data("id"))
                                 }

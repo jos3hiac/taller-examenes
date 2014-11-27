@@ -3,7 +3,6 @@ package models;
 import play.db.ebean.Model;
 
 import javax.persistence.*;
-import java.util.*;
 
 @Entity
 public class Exam_question extends Model{
@@ -18,7 +17,7 @@ public class Exam_question extends Model{
     public Exam_question(int score_correct,int score_incorrect,int professor_question_id){
         this.score_correct=score_correct;
         this.score_incorrect=score_incorrect;
-        professor_question=Professor_question.find.byId(professor_question_id);
+        professor_question = Professor_question.find.byId(professor_question_id);
     }
     public static Exam_question create(int score_correct,int score_incorrect,int professor_question_id){
         Exam_question exam_question=new Exam_question(score_correct,score_incorrect,professor_question_id);

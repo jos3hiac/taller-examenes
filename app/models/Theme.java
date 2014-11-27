@@ -53,4 +53,15 @@ public class Theme extends Model{
         }
         return themes;
     }
+    public List<Professor_question> professor_questions(int professor_id,int exam_id){
+        SqlQuery query = Ebean.createSqlQuery("select pq.id pq_id from professor_question pq"+
+                " join question q on (pq.professor_id=:p_id and pq.exam_id=:e_id and pq.question_id=q.id and q.theme_id=:id)")
+                .setParameter("p_id",professor_id).setParameter("e_id",exam_id).setParameter("id",id);
+        List<SqlRow> rows = query.findList();
+        List<Professor_question> professor_questions=new ArrayList<>();
+        for(SqlRow row : rows){
+            professor_questions.add(Professor_question.find.byId(row.getInteger("pq_id")));
+        }
+        return professor_questions;
+    }
 }

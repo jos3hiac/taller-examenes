@@ -40,8 +40,8 @@ public class Cycle extends Model{
         map.put("id",id+"");
         map.put("name",name);
         map.put("duration",duration);
-        map.put("startDate",Application.getDate(startDate));
-        map.put("lastDate",Application.getDate(lastDate));
+        map.put("startDate",startDate!=null?Application.getDate(startDate):"");
+        map.put("lastDate",lastDate!=null?Application.getDate(lastDate):"");
         return map;
     }
     public void update(String name,String duration,String startDate,String lastDate){
@@ -78,5 +78,15 @@ public class Cycle extends Model{
             asignatures.add(Asignature.findById(row.getInteger("pid"),row.getInteger("cid"),row.getInteger("sid")));
         }
         return asignatures;
+    }
+    public List<Professor_question> professor_questions(int professor_id){
+        SqlQuery query = Ebean.createSqlQuery("select pq.id pq_id from professor_question pq join exam e on (pq.professor_id=:p_id and pq.exam_id=e.id and e.cycle_id=:id)")
+                .setParameter("p_id",professor_id).setParameter("id",id);
+        List<SqlRow> rows = query.findList();
+        List<Professor_question> professor_questions=new ArrayList<>();
+        for(SqlRow row : rows){
+            professor_questions.add(Professor_question.find.byId(row.getInteger("pq_id")));
+        }
+        return professor_questions;
     }
 }

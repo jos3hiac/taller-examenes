@@ -62,6 +62,17 @@ public class Course extends Model{
         }
         return questions;
     }
+    public List<Professor_question> professor_questions(int professor_id,int exam_id){
+        SqlQuery query = Ebean.createSqlQuery("select pq.id pq_id from professor_question pq"+
+                " join question q on (pq.professor_id=:p_id and pq.exam_id=:e_id and pq.question_id=q.id) join theme th on (q.theme_id=th.id) join course co on(th.course_id=co.id and co.id=:id)")
+                .setParameter("p_id",professor_id).setParameter("e_id",exam_id).setParameter("id",id);
+        List<SqlRow> rows = query.findList();
+        List<Professor_question> professor_questions=new ArrayList<>();
+        for(SqlRow row : rows){
+            professor_questions.add(Professor_question.find.byId(row.getInteger("pq_id")));
+        }
+        return professor_questions;
+    }
     public static List<Course> NotInCycle(int cycle_id){
         SqlQuery query = Ebean.createSqlQuery("select c.id cid from course c where c.id not in "+
             "(select course_id from cycle_x_course cc where cc.cycle_id=:id )")

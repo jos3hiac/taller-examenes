@@ -91,44 +91,50 @@
                 }
             })
         }
-        $.fn.add_row=function(id,values,btns){
+        $.fn.add_row=function(model,funcValues,btns,funcStart){
             if($(this).is("tbody")){
-                var tr='<tr data-id="'+id+'">'
-                for(var i in values){
-                    tr+='<td>'+values[i]+'</td>'
+                var obj=funcValues(model)
+                var tr='<tr data-id="'+obj.id+'">'
+                for(var i in obj.values){
+                    tr+='<td>'+obj.values[i]+'</td>'
                 }
                 tr+='<td>'
+                if(btns === undefined)btns=["Editar","Eliminar"]
                 for(var i in btns){
-                    if(btns[i]=="Editar"){
-                        tr+='<button class="btn btn-sm btn-primary">Editar</button>'+
-                        '<button class="btn btn-sm btn-primary hidden">Guardar</button>'+
-                        '<button class="btn btn-sm btn-primary hidden">Cancelar</button>'
-                    }
-                    else if(btns[i]=="Eliminar") {
-                        tr+='<button class="btn btn-sm btn-danger">'+btns[i]+'</button>'
+                    if($.isPlainObject(btns[i])){
+                        if(btns[i].hasOwnProperty("button"))tr+=btns[i].button
                     }
                     else{
-                        tr+='<button class="btn btn-sm btn-primary">'+btns[i]+'</button>'
+                        if(btns[i]=="Editar"){
+                            tr+='<button class="btn btn-sm btn-primary">Editar</button>'+
+                            '<button class="btn btn-sm btn-primary hidden">Guardar</button>'+
+                            '<button class="btn btn-sm btn-primary hidden">Cancelar</button>'
+                        }
+                        else if(btns[i]=="Eliminar") {
+                            tr+='<button class="btn btn-sm btn-danger">'+btns[i]+'</button>'
+                        }
+                        else{
+                            tr+='<button class="btn btn-sm btn-primary">'+btns[i]+'</button>'
+                        }
                     }
                 }
                 tr+='</td></tr>'
                 $(this).append(tr)
-                //if($(this).parent().data("datatable")!==undefined)$(this).parent().data("datatable").DataTable().row.add($(tr)).draw()
+                if(funcStart !== undefined)funcStart(model,$(this).find("tr:last-child")[0])
             }
         }
-        $.fn.add_rows_model=function(modelArray,func,btns){
+        $.fn.add_rows_model=function(modelArray,funcValues,btns,funcStart){
             if($(this).is("tbody")){
                 for(var i in modelArray){
-                    var obj=func(modelArray[i])
-                    $(this).add_row(obj.id,obj.values,btns!==undefined?btns:["Editar","Eliminar"])
+                    $(this).add_row(modelArray[i],funcValues,btns,funcStart)
                 }
             }
         }
-        $.fn.add_rows_ajax=function(url,data,func,btns){
+        $.fn.add_rows_ajax=function(url,data,funcValues,btns,funcStart){
             if($(this).is("tbody")){
                 var table=this
                 $(table).ajax_model(url,data,function(modelArray){
-                    $(table).add_rows_model($.isArray(modelArray)?modelArray:[modelArray],func,btns)
+                    $(table).add_rows_model($.isArray(modelArray)?modelArray:[modelArray],funcValues,btns,funcStart)
                 })
             }
         }
@@ -145,14 +151,14 @@
                 $(this).removeData("datatable")
             }
         }
-        $.fn.ajax_datatable=function(url,data,type,func,btns){
+        $.fn.ajax_datatable=function(url,data,type,funcValues,btns,funcStart){
             if($(this).is("table")){
                 var table=this
                 if($(table).data("datatable") !== undefined)$(table).remove_datatable()
                 if(type=="update"){
                     $(table).find("tbody").text("")
                 }
-                $(table).find("tbody").add_rows_ajax(url,data,func,btns)
+                $(table).find("tbody").add_rows_ajax(url,data,funcValues,btns,funcStart)
                 $(table).add_datatable()
             }
         }
@@ -253,7 +259,7 @@
                 $(this).on( 'click', 'button', function (e) {
                     e.stopPropagation()
                     var tr=$(this).parent().parent()
-                    var name=$(this).text()
+                    var name=this.hasAttribute("name")?$(this).attr("name"):$(this).text()
                     if(funcs !== undefined && funcs.hasOwnProperty(name))funcs[name](this)
                     else{
                         if(name=='Editar')$(this).accion_edit()
@@ -725,15 +731,7 @@
                             })
                         }})
                     })
-                    $("#ciclo_examen_temas_tab").ajax_datatable("administrador/listexamxthemes",{exam_id:$("#div_ciclo_examenes").data("exam").id,
-                        course_id:$("#add_ciclo_examen_curso_list").val()},"update",function(theme){
-                        return {id:theme.id,values:[theme.name]}
-                    },["Eliminar"])
-                    $("#add_ciclo_examen_tema form").myValidate(false,{temas:{required:true}})
-                    $("#add_ciclo_examen_tema_list").update_select("administrador/listthemesnotinexam",{exam_id:$("#div_ciclo_examenes").data("exam").id,
-                        course_id:$("#add_ciclo_examen_curso_list").val()},function(theme){
-                        return {value:theme.id,text:theme.name}
-                    })
+                    $("#add_ciclo_examen_curso_list").change()
                 }
             }
         })
@@ -971,5 +969,54 @@
                     })
             }
         })
+    </script>
+    <div id="div_usuarios" class="col-md-10 hidden">
+        <div class="col-md-12">
+            <h3 style="display: inline-block">Usuarios</h3>
+            <table id="usuarios_tab" class="display">
+                <thead>
+                    <tr style="cursor: pointer">
+                        <th>Apellidos</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Password</th>
+                        <th>Activo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        $("a.list-group-item:eq(3)").click(function(){
+            $("#usuarios_tab").ajax_datatable("administrador/listuser",{},"update",function(user){
+                return {
+                    id:user.id,values:[user.lastname,user.name,user.email,user.pass,user.active==1?"SI":"NO"]
+                }
+            },[{button:'<button class="btn btn-sm btn-primary hidden" name="Desactivar"><i>Desactivar</i></button>'},
+                {button:'<button class="btn btn-sm btn-primary hidden" name="Activar"><i>Activar</i></button>'}],
+                function(user,tr){
+                    if(user.active==1)$(tr).find("button:eq(0)").removeClass("hidden")
+                    if(user.active==0)$(tr).find("button:eq(1)").removeClass("hidden")
+            })
+            $("#usuarios_tab tbody").acciones("user",[],{"Desactivar":function(btn){
+                    var tr=$(btn).parent().parent()
+                    $(btn).ajax_model("administrador/updateactiveuser",{user_id:$(tr).attr("data-id"),active:0},function(){
+                        $(btn).addClass("hidden")
+                        $(btn).next().removeClass("hidden")
+                        $(tr).find("td:nth-child(5)").text("NO")
+                    })
+                },"Activar":function(btn){
+                    var tr=$(btn).parent().parent()
+                    $(btn).ajax_model("administrador/updateactiveuser",{user_id:$(tr).attr("data-id"),active:1},function(){
+                        $(btn).addClass("hidden")
+                        $(btn).prev().removeClass("hidden")
+                        $(tr).find("td:nth-child(5)").text("SI")
+                    })
+                }})
+        })
+        $("#usuarios_tab tbody").selectable()
     </script>
 }

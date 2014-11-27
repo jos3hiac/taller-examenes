@@ -58,4 +58,15 @@ public class Exam extends Model{
         update();
     }
     public static Finder<Integer,Exam> find = new Finder<>(Integer.class,Exam.class);
+
+    public List<Professor_question> professor_questions(int professor_id){
+        SqlQuery query = Ebean.createSqlQuery("select pq.id pq_id from professor_question pq where(pq.professor_id=:p_id and pq.exam_id=:id)")
+                .setParameter("p_id",professor_id).setParameter("id",id);
+        List<SqlRow> rows = query.findList();
+        List<Professor_question> professor_questions=new ArrayList<>();
+        for(SqlRow row : rows){
+            professor_questions.add(Professor_question.find.byId(row.getInteger("pq_id")));
+        }
+        return professor_questions;
+    }
 }

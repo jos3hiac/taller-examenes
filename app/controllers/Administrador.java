@@ -114,6 +114,25 @@ public class Administrador extends Controller {
         }
         return ok(Json.toJson(students));
     }
+    public static Result listUser(){
+        DynamicForm data = form().bindFromRequest();
+        List<Map<String,String>> users=new ArrayList<>();
+        for(User user:User.find.all()){
+            if(user.admin==null){
+                Map<String,String> u=user.getMap();
+                u.put("lastname",user.professor!=null?user.professor.lastname:user.student!=null?user.student.lastname:"");
+                u.put("name",user.professor!=null?user.professor.name:user.student!=null?user.student.name:"");
+                users.add(u);
+            }
+        }
+        return ok(Json.toJson(users));
+    }
+    public static Result updateActiveUser(){
+        DynamicForm data = form().bindFromRequest();
+        User user=User.find.byId(Integer.parseInt(data.get("user_id")));
+        user.updateActive(Integer.parseInt(data.get("active")));
+        return ok();
+    }
     public static Result addCourses(){
         DynamicForm data = form().bindFromRequest();
         List<Map<String, String>> courses=new ArrayList<>();
@@ -246,6 +265,7 @@ public class Administrador extends Controller {
             case "asignature":Asignature.findById(Integer.parseInt(data.get("professor_id")),Integer.parseInt(data.get("course_id")),Integer.parseInt(data.get("section_id"))).delete();break;
             case "exam":Exam.find.byId(Integer.parseInt(data.get("id"))).delete();break;
             case "examxtheme":Exam.find.byId(Integer.parseInt(data.get("exam_id"))).removeTheme(Integer.parseInt(data.get("theme_id")));break;
+            case "professor_question":Professor_question.find.byId(Integer.parseInt(data.get("id"))).delete();break;
         }
         return ok();
     }

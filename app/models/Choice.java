@@ -27,6 +27,19 @@ public class Choice extends Model{
         choice.save();
         return choice;
     }
+    public Map getMap(){
+        Map<String,String> map=new HashMap<>();
+        map.put("id",id+"");
+        if(value!=null)map.put("value",value);
+        if(image!=null)map.put("image",image);
+        if(image!=null)map.put("imagepath",getImagePath());
+        return map;
+    }
+    public void update(String value,String image){
+        this.value=value;
+        this.image=image;
+        update();
+    }
     public static Finder<Integer,Choice> find = new Finder<>(Integer.class,Choice.class);
 
     public String getTokenImage(int pos){
